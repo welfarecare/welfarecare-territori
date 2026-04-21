@@ -172,6 +172,23 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 .sp-pian{background:#e8f6fc;color:#1a8fc2}
 .sp-corso{background:#faeeda;color:#854f0b}
 .sp-comp{background:#eaf3de;color:#3b6d11}
+/* WIZARD */
+.wz-step{color:var(--tx3);transition:background .15s}
+.wz-step.on{background:var(--wcl);color:var(--wcd)}
+.wz-step.done{background:#eaf3de;color:#3b6d11}
+.wz-num{width:22px;height:22px;border-radius:50%;background:var(--bd2);color:var(--tx3);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wz-step.on .wz-num{background:var(--wc);color:#fff}
+.wz-step.done .wz-num{background:#3b6d11;color:#fff}
+.wz-comune-row{cursor:pointer;transition:background .1s}
+.wz-comune-row:hover td{background:var(--wcl)}
+.wz-comune-row.selected td{background:#eaf3de}
+.sel-item{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bd);font-size:12px}
+.sel-item:last-child{border-bottom:none}
+.sel-handle{color:var(--tx3);cursor:grab;font-size:14px}
+.sel-num{width:20px;height:20px;border-radius:50%;background:var(--wc);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sel-nome{flex:1;font-weight:500;font-size:11px;color:var(--tx)}
+.sel-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px}
+.sel-rm:hover{color:#a32d2d;background:#fcebeb}
 /* ARCHIVIO */
 .arch-year-block{margin-bottom:18px}
 .arch-year-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;margin-bottom:4px}
@@ -378,17 +395,138 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 
         <!-- PROGRAMMA -->
         <div class="sec" id="s-programma">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-            <select class="fs" style="width:120px" id="prAnno" onchange="loadProgramma()">
-            </select>
-            <select class="fs" style="width:180px" id="prIncaricato" onchange="loadProgramma()">
-              <option value="">Tutti gli incaricati</option>
-            </select>
-            <div style="flex:1"></div>
-            <button class="btn btns" onclick="addAnno()" style="font-size:11px">+ Anno</button>
-            <button class="btn btnp" onclick="openModalAddComune()" style="font-size:12px">+ Aggiungi comune al piano</button>
+          <!-- VISTA LISTA PROGRAMMI -->
+          <div id="prListaView">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+              <select class="fs" style="width:120px" id="prAnno" onchange="loadProgramma()"></select>
+              <select class="fs" style="width:180px" id="prIncaricato" onchange="loadProgramma()">
+                <option value="">Tutti gli incaricati</option>
+              </select>
+              <div style="flex:1"></div>
+              <button class="btn btnp" onclick="apriWizard()" style="font-size:12px">+ Crea programma</button>
+            </div>
+            <div id="programmaBody"><div class="loading">Caricamento...</div></div>
           </div>
-          <div id="programmaBody"><div class="loading">Caricamento...</div></div>
+
+          <!-- WIZARD CREAZIONE PROGRAMMA -->
+          <div id="prWizardView" style="display:none">
+            <!-- Step indicator -->
+            <div style="display:flex;align-items:center;gap:0;margin-bottom:24px;background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden">
+              <div class="wz-step on" id="wz-s1" style="flex:1;padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;border-right:1px solid var(--bd)">
+                <div class="wz-num" id="wz-n1">1</div>
+                <span>Intestazione</span>
+              </div>
+              <div class="wz-step" id="wz-s2" style="flex:1;padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;border-right:1px solid var(--bd)">
+                <div class="wz-num" id="wz-n2">2</div>
+                <span>Zona & Anno</span>
+              </div>
+              <div class="wz-step" id="wz-s3" style="flex:1;padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500">
+                <div class="wz-num" id="wz-n3">3</div>
+                <span>Seleziona comuni</span>
+              </div>
+            </div>
+
+            <!-- STEP 1: Intestazione -->
+            <div id="wz-step1">
+              <div class="card" style="max-width:560px">
+                <div class="ch"><span class="ct2">Intestazione del programma</span></div>
+                <div style="padding:20px">
+                  <div class="fg"><div class="fl">Nome programma *</div><input class="fi" id="wzNome" placeholder="Es. Campagna Veneto 2026"/></div>
+                  <div class="fg"><div class="fl">Tipologia evento</div>
+                    <select class="fs" id="wzTipo">
+                      <option value="">— Seleziona —</option>
+                      <option value="M+E">Mammografia + Ecografia (M+E)</option>
+                      <option value="M+PRO">Mammografia + Prostata (M+PRO)</option>
+                      <option value="PROSTATA">Solo Prostata</option>
+                      <option value="MAMMO">Solo Mammografia</option>
+                      <option value="NEVI">Nevi</option>
+                      <option value="MELANOMA">Melanoma</option>
+                      <option value="MISTO">Misto</option>
+                    </select>
+                  </div>
+                  <div class="fg"><div class="fl">Incaricato *</div>
+                    <select class="fs" id="wzIncaricato">
+                      <option value="">Seleziona incaricato...</option>
+                    </select>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button class="btn btns" onclick="chiudiWizard()">Annulla</button>
+                    <button class="btn btnp" onclick="wzNext(1)">Avanti →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: Zona & Anno -->
+            <div id="wz-step2" style="display:none">
+              <div class="card" style="max-width:560px">
+                <div class="ch"><span class="ct2">Zona geografica e anno</span></div>
+                <div style="padding:20px">
+                  <div class="fg"><div class="fl">Anno *</div>
+                    <select class="fs" id="wzAnno"></select>
+                  </div>
+                  <div class="fg"><div class="fl">Regione *</div>
+                    <select class="fs" id="wzRegione" onchange="onWzRegioneChange()">
+                      <option value="">Seleziona regione...</option>
+                    </select>
+                  </div>
+                  <div class="fg"><div class="fl">Provincia (opzionale)</div>
+                    <select class="fs" id="wzProvincia">
+                      <option value="">Tutte le province</option>
+                    </select>
+                  </div>
+                  <div style="background:var(--wcl);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--wcd);margin-bottom:14px">
+                    Puoi anche partire dal programma dell'anno precedente dello stesso incaricato in questa zona.
+                  </div>
+                  <div class="fg">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px">
+                      <input type="checkbox" id="wzCopiaAnnoPrec" style="width:14px;height:14px;accent-color:var(--wc)"/>
+                      Carica comuni dal programma anno precedente
+                    </label>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button class="btn btns" onclick="wzBack(2)">← Indietro</button>
+                    <button class="btn btnp" onclick="wzNext(2)">Avanti →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Selezione comuni -->
+            <div id="wz-step3" style="display:none">
+              <div style="display:flex;gap:16px;align-items:flex-start">
+                <!-- Colonna sinistra: comuni disponibili -->
+                <div style="flex:1;min-width:0">
+                  <div class="card">
+                    <div class="ch">
+                      <span class="ct2">Comuni disponibili</span>
+                      <input class="fi" style="width:180px;margin:0;font-size:11px" placeholder="Cerca..." id="wzSearch" oninput="filterWzComuni()"/>
+                    </div>
+                    <div style="max-height:480px;overflow-y:auto">
+                      <table class="tbl" id="wzComuniTable">
+                        <thead><tr><th style="width:32px"></th><th>Comune</th><th>Provincia</th><th>Stato</th><th>Budget tot.</th><th>Ultimo evento</th></tr></thead>
+                        <tbody id="wzComuniBody"><tr><td colspan="6" class="loading">Caricamento...</td></tr></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Colonna destra: comuni selezionati -->
+                <div style="width:300px;flex-shrink:0">
+                  <div class="card">
+                    <div class="ch"><span class="ct2">Piano selezionato</span><span class="nib" id="wzSelCount">0</span></div>
+                    <div id="wzSelectedList" style="min-height:80px;padding:8px 0">
+                      <div class="empty" style="padding:20px;font-size:11px">Seleziona i comuni dalla lista</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px;display:flex;gap:8px">
+                    <button class="btn btns" onclick="wzBack(3)" style="flex:1">← Indietro</button>
+                    <button class="btn btnp" onclick="wzSalva()" style="flex:1" id="wzBtnSalva">Crea programma</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- ARCHIVIO -->
@@ -823,6 +961,213 @@ document.getElementById('fReg').addEventListener('change',()=>{updateProv();rend
 
 // ─── PROGRAMMA ────────────────────────────────────────
 let dragSrc = null;
+let wzSelezionati = []; // [{id, comune, provincia, stato, budgetTot, ultimoAnno}]
+let wzAllComuni = [];   // tutti i comuni caricati nel wizard
+
+// ── WIZARD ─────────────────────────────────────────────
+function apriWizard() {
+  document.getElementById('prListaView').style.display = 'none';
+  document.getElementById('prWizardView').style.display = 'block';
+  wzSelezionati = []; wzAllComuni = [];
+  wzGoStep(1);
+  populateIncaricatiSelect('wzIncaricato');
+  populateAnniSelect('wzAnno');
+  const regSel = document.getElementById('wzRegione');
+  regSel.innerHTML = '<option value="">Seleziona regione...</option>';
+  [...new Set(allT.map(t=>t.regione))].sort().forEach(r => {
+    const o = document.createElement('option'); o.value=r; o.textContent=r; regSel.appendChild(o);
+  });
+}
+
+function chiudiWizard() {
+  document.getElementById('prWizardView').style.display = 'none';
+  document.getElementById('prListaView').style.display = 'block';
+}
+
+function wzGoStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('wz-step'+i).style.display = i===n ? '' : 'none';
+    const s = document.getElementById('wz-s'+i);
+    s.classList.toggle('on', i===n);
+    s.classList.toggle('done', i<n);
+  });
+}
+
+async function wzNext(from) {
+  if (from === 1) {
+    const nome = document.getElementById('wzNome').value.trim();
+    const inc = document.getElementById('wzIncaricato').value;
+    if (!nome) { toast('Inserisci il nome del programma','error'); return; }
+    if (!inc) { toast('Seleziona un incaricato','error'); return; }
+    wzGoStep(2);
+  } else if (from === 2) {
+    const reg = document.getElementById('wzRegione').value;
+    const anno = document.getElementById('wzAnno').value;
+    if (!reg) { toast('Seleziona una regione','error'); return; }
+    wzGoStep(3);
+    await wzLoadComuni();
+  }
+}
+
+function wzBack(from) {
+  wzGoStep(from - 1);
+}
+
+function onWzRegioneChange() {
+  const reg = document.getElementById('wzRegione').value;
+  const pSel = document.getElementById('wzProvincia');
+  pSel.innerHTML = '<option value="">Tutte le province</option>';
+  [...new Set(allT.filter(t=>t.regione===reg).map(t=>t.provincia))].sort()
+    .forEach(p => { const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+}
+
+async function wzLoadComuni() {
+  document.getElementById('wzComuniBody').innerHTML = '<tr><td colspan="6" class="loading">Caricamento...</td></tr>';
+  const reg = document.getElementById('wzRegione').value;
+  const prov = document.getElementById('wzProvincia').value;
+  const anno = parseInt(document.getElementById('wzAnno').value);
+  const incId = document.getElementById('wzIncaricato').value;
+  const copiaAnnoPrec = document.getElementById('wzCopiaAnnoPrec').checked;
+
+  // Carica comuni della zona
+  let q = sb.from('territori').select('*, budget_territori(anno,importo)').eq('regione', reg).order('comune');
+  if (prov) q = q.eq('provincia', prov);
+  const { data: tList } = await q;
+
+  // Carica programmi esistenti per questo anno (per vedere chi è occupato)
+  const { data: progEsist } = await sb.from('programma').select('territorio_id, incaricato_id, profili(nome,cognome)').eq('anno', anno);
+  const occupati = {};
+  (progEsist||[]).forEach(p => { occupati[p.territorio_id] = p; });
+
+  // Se copia anno precedente, precarica
+  if (copiaAnnoPrec && incId) {
+    const { data: annoPrecData } = await sb.from('programma')
+      .select('territorio_id, ordine, territori(comune,provincia)')
+      .eq('anno', anno-1)
+      .eq('incaricato_id', incId)
+      .order('ordine');
+    if (annoPrecData?.length) {
+      wzSelezionati = [];
+      annoPrecData.forEach(p => {
+        const t = tList?.find(x => x.id === p.territorio_id);
+        if (t) {
+          const bTot = (t.budget_territori||[]).reduce((s,b)=>s+(b.importo||0),0);
+          const lastB = (t.budget_territori||[]).sort((a,b2)=>b2.anno-a.anno)[0];
+          wzSelezionati.push({ id: t.id, comune: t.comune, provincia: t.provincia, stato: t.note||'', budgetTot: bTot, ultimoAnno: lastB?.anno });
+        }
+      });
+      renderWzSelected();
+      toast(`Caricati ${wzSelezionati.length} comuni dal programma ${anno-1}`, 'success');
+    }
+  }
+
+  wzAllComuni = (tList||[]).map(t => {
+    const bTot = (t.budget_territori||[]).reduce((s,b)=>s+(b.importo||0),0);
+    const lastB = (t.budget_territori||[]).sort((a,b2)=>b2.anno-a.anno)[0];
+    const occ = occupati[t.id];
+    return { id:t.id, comune:t.comune, provincia:t.provincia, stato:t.note||'', budgetTot:bTot, ultimoAnno:lastB?.anno, ultimoBudget:lastB?.importo, occupatoDa: occ && occ.incaricato_id!==incId ? occ : null };
+  });
+  renderWzComuni();
+}
+
+function renderWzComuni() {
+  const q = document.getElementById('wzSearch').value.toLowerCase();
+  const filtered = wzAllComuni.filter(t => !q || t.comune.toLowerCase().includes(q) || t.provincia.toLowerCase().includes(q));
+  const tbody = document.getElementById('wzComuniBody');
+  if (!filtered.length) { tbody.innerHTML='<tr><td colspan="6" class="empty">Nessun comune</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(t => {
+    const isSelected = wzSelezionati.some(s => s.id === t.id);
+    const stato = (t.stato||'').replace('Stato: ','');
+    const statoColor = stato==='NO'?'br':stato.includes('ASSEGNATO')?'bg':stato==='SOSPESO'?'ba':stato==='MAIL'?'bb':'bk';
+    const occ = t.occupatoDa;
+    const occNome = occ?.profili ? `${occ.profili.nome||''} ${occ.profili.cognome||''}`.trim() : '';
+    return `<tr class="wz-comune-row${isSelected?' selected':''}" onclick="wzToggleComune('${t.id}')" data-id="${t.id}">
+      <td><input type="checkbox" ${isSelected?'checked':''} style="accent-color:var(--wc);width:13px;height:13px" onclick="event.stopPropagation();wzToggleComune('${t.id}')"/></td>
+      <td><strong>${t.comune}</strong>${occ?`<br><span style="font-size:9px;color:#854f0b">Assegnato a ${occNome}</span>`:''}</td>
+      <td style="color:var(--tx3)">${t.provincia}</td>
+      <td><span class="bx ${statoColor}" style="font-size:9px">${stato||'—'}</span></td>
+      <td style="font-weight:500;color:var(--wcd)">€ ${t.budgetTot>0?t.budgetTot.toLocaleString('it-IT'):'—'}</td>
+      <td style="color:var(--tx3)">${t.ultimoAnno||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterWzComuni() { renderWzComuni(); }
+
+function wzToggleComune(id) {
+  const t = wzAllComuni.find(x=>x.id===id);
+  if (!t) return;
+  const idx = wzSelezionati.findIndex(s=>s.id===id);
+  if (idx >= 0) wzSelezionati.splice(idx,1);
+  else wzSelezionati.push(t);
+  renderWzSelected();
+  renderWzComuni();
+}
+
+function renderWzSelected() {
+  document.getElementById('wzSelCount').textContent = wzSelezionati.length;
+  const div = document.getElementById('wzSelectedList');
+  if (!wzSelezionati.length) {
+    div.innerHTML = '<div class="empty" style="padding:20px;font-size:11px">Seleziona i comuni dalla lista</div>';
+    return;
+  }
+  div.innerHTML = wzSelezionati.map((t,i) => `
+    <div class="sel-item" draggable="true" data-id="${t.id}" 
+      ondragstart="wzDragStart(event,'${t.id}')" ondragover="wzDragOver(event)" ondrop="wzDrop(event,'${t.id}')">
+      <span class="sel-handle">⠿</span>
+      <div class="sel-num">${i+1}</div>
+      <div class="sel-nome">${t.comune}<br><span style="font-size:9px;color:var(--tx3)">${t.provincia}</span></div>
+      <button class="sel-rm" onclick="wzRimuovi('${t.id}')">✕</button>
+    </div>`).join('');
+}
+
+let wzDragId = null;
+function wzDragStart(e, id) { wzDragId = id; }
+function wzDragOver(e) { e.preventDefault(); }
+function wzDrop(e, targetId) {
+  e.preventDefault();
+  if (!wzDragId || wzDragId === targetId) return;
+  const fi = wzSelezionati.findIndex(s=>s.id===wzDragId);
+  const ti = wzSelezionati.findIndex(s=>s.id===targetId);
+  if (fi<0||ti<0) return;
+  const [item] = wzSelezionati.splice(fi,1);
+  wzSelezionati.splice(ti,0,item);
+  renderWzSelected();
+}
+
+function wzRimuovi(id) {
+  wzSelezionati = wzSelezionati.filter(s=>s.id!==id);
+  renderWzSelected();
+  renderWzComuni();
+}
+
+async function wzSalva() {
+  if (!wzSelezionati.length) { toast('Seleziona almeno un comune','error'); return; }
+  const nome = document.getElementById('wzNome').value.trim();
+  const tipo = document.getElementById('wzTipo').value;
+  const incId = document.getElementById('wzIncaricato').value;
+  const anno = parseInt(document.getElementById('wzAnno').value);
+  const btn = document.getElementById('wzBtnSalva');
+  btn.textContent = 'Salvo...'; btn.disabled = true;
+
+  const inserts = wzSelezionati.map((t,i) => ({
+    territorio_id: t.id,
+    incaricato_id: incId,
+    anno,
+    ordine: i+1,
+    stato: 'pianificato',
+    note: nome + (tipo ? ` — ${tipo}` : '')
+  }));
+
+  const { error } = await sb.from('programma').insert(inserts);
+  if (error) { toast('Errore: '+error.message,'error'); btn.textContent='Crea programma'; btn.disabled=false; return; }
+
+  await sb.from('attivita').insert({ utente_id: user?.id, tipo:'programma_creato', descrizione:`Programma "${nome}" creato con ${wzSelezionati.length} comuni` });
+  toast(`Programma "${nome}" creato con ${wzSelezionati.length} comuni`, 'success');
+  btn.textContent = 'Crea programma'; btn.disabled = false;
+  chiudiWizard();
+  await loadProgramma();
+}
 
 async function loadProgramma() {
   const annoSel = document.getElementById('prAnno');
