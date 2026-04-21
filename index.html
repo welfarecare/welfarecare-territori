@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WelfareCare — Gestionale Patrocini</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --wc:#26ADE4;--wcd:#1a8fc2;--wcl:#e8f6fc;--wcm:#b3e2f5;
+  --bg:#f5f6f8;--surface:#fff;--surface2:#f9f9fb;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.13);
+  --text:#111;--text2:#5a6072;--text3:#9da3b0;
+  --f:'Poppins',sans-serif;--r:8px;--rl:12px;
+}
+body{font-family:var(--f);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* AUTH SCREEN */
+.auth-wrap{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:40px;width:380px}
+.auth-logo{margin-bottom:28px}
+.auth-logo svg{width:200px;height:auto}
+.auth-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px}
+.auth-sub{font-size:12px;color:var(--text3);margin-bottom:24px}
+.auth-err{background:#fcebeb;color:#a32d2d;font-size:12px;padding:10px 12px;border-radius:var(--r);margin-bottom:14px;display:none}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fl{font-size:11px;font-weight:500;color:var(--text2)}
+.fi{font-family:var(--f);font-size:13px;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text);width:100%;outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--wc)}
+.btn{font-family:var(--f);font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);transition:all .15s}
+.btn:hover{background:var(--surface2)}
+.btnp{background:var(--wc);color:#fff;border-color:var(--wc);width:100%;padding:11px;font-size:13px}
+.btnp:hover{background:var(--wcd)}
+.btns{background:transparent;color:var(--text2);border-color:var(--border);font-size:11px;padding:5px 11px}
+
+/* APP LAYOUT */
+.app{display:none;flex-direction:column;height:100vh}
+.app.visible{display:flex}
+.topnav{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+.topnav-logo{width:160px;flex-shrink:0;display:flex;align-items:center}
+.topnav-logo{flex-shrink:0;overflow:hidden}.topnav svg.logo{width:160px;height:24px;display:block}
+.topnav-div{width:1px;height:24px;background:var(--border2)}
+.topnav-dept{font-size:11px;font-weight:500;color:var(--wcd);background:var(--wcl);padding:4px 10px;border-radius:20px}
+.topnav-spacer{flex:1}
+.topnav-search{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:0 12px;height:32px}
+.topnav-search input{border:none;background:transparent;font-family:var(--f);font-size:12px;color:var(--text);width:200px;outline:none}
+.topnav-search svg{width:13px;height:13px;color:var(--text3);flex-shrink:0}
+.topnav-user{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:var(--r);position:relative}
+.topnav-user:hover{background:var(--surface2)}
+.av{width:28px;height:28px;border-radius:50%;background:var(--wc);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0}
+.user-menu{position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:6px;min-width:160px;display:none;z-index:100}
+.user-menu.open{display:block}
+.user-menu-item{padding:8px 12px;font-size:12px;color:var(--text2);border-radius:var(--r);cursor:pointer}
+.user-menu-item:hover{background:var(--surface2);color:var(--text)}
+.user-menu-item.danger{color:#a32d2d}
+.user-menu-item.danger:hover{background:#fcebeb}
+
+.body{display:flex;flex:1;overflow:hidden}
+.side{width:210px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.snl{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;padding:14px 14px 4px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--text2);transition:background .12s,color .12s}
+.ni:hover{background:var(--surface2);color:var(--text)}
+.ni.on{background:var(--wcl);color:var(--wcd);font-weight:500}
+.ni svg{width:14px;height:14px;flex-shrink:0}
+.nibadge{margin-left:auto;background:var(--wc);color:#fff;font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px}
+.side-foot{margin-top:auto;border-top:1px solid var(--border);padding:12px 14px;display:flex;align-items:center;gap:9px}
+.admin-only{display:none}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.subbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.subbar-title{font-size:15px;font-weight:600;color:var(--text);flex:1}
+.subbar-crumb{font-size:10px;color:var(--text3);margin-bottom:1px}
+.subbar-crumb span{color:var(--wc)}
+.subbar-actions{display:flex;gap:8px;align-items:center}
+.content{flex:1;overflow-y:auto;padding:24px}
+.sec{display:none}.sec.on{display:block}
+
+/* CARDS & TABLES */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px}
+.kpil{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:4px}
+.kpiv{font-size:26px;font-weight:600;color:var(--text);line-height:1}
+.kpis2{font-size:10px;color:var(--text3);margin-top:4px}
+.kdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--wc);margin-right:4px;vertical-align:middle}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ctt{font-size:13px;font-weight:600;color:var(--text)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g32{display:grid;grid-template-columns:3fr 2fr;gap:16px;margin-bottom:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.tbl th{padding:9px 16px;text-align:left;font-weight:500;font-size:10px;color:var(--text2);background:var(--surface2);border-bottom:1px solid var(--border)}
+.tbl td{padding:9px 16px;border-bottom:1px solid var(--border);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surface2);cursor:pointer}
+.bx{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.bg{background:#eaf3de;color:#3b6d11}.ba{background:#faeeda;color:#854f0b}
+.bb{background:var(--wcl);color:var(--wcd)}.br{background:#fcebeb;color:#a32d2d}
+.bk{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}.bwc{background:var(--wc);color:#fff}
+.tirow{display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid var(--border)}
+.tirow:last-child{border-bottom:none}
+.tiico{width:32px;height:32px;border-radius:var(--r);background:var(--wcl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pbar{height:5px;border-radius:3px;background:var(--surface2);margin:4px 0 2px;overflow:hidden;border:1px solid var(--border)}
+.pfill{height:100%;border-radius:3px;background:var(--wc)}
+.ait{display:flex;gap:11px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:12px}
+.ait:last-child{border-bottom:none}
+.adot{width:7px;height:7px;border-radius:50%;background:var(--wc);margin-top:4px;flex-shrink:0}
+.tog{width:34px;height:19px;border-radius:10px;position:relative;cursor:pointer;border:none;flex-shrink:0;transition:background .2s}
+.tog.on{background:var(--wc)}.tog.off{background:var(--border2)}
+.tog::after{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;top:2px;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on::after{left:17px}.tog.off::after{left:2px}
+.prrow{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--border);font-size:12px}
+.prrow:last-child{border-bottom:none}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 18px}
+.fgrid .full{grid-column:1/-1}
+.fsel{font-family:var(--f);font-size:12px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text);width:100%;outline:none}
+.form-actions{padding:0 18px 16px;display:flex;gap:8px}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+.loading{text-align:center;padding:30px;color:var(--text3);font-size:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 18px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none;animation:fadeup .2s ease}
+.toast.success{background:#3b6d11}.toast.error{background:#a32d2d}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl);width:560px;max-height:85vh;overflow-y:auto;border:1px solid var(--border)}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:14px;font-weight:600;color:var(--text)}
+.modal-close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:var(--r)}
+.modal-close:hover{background:var(--surface2)}
+.modal-body{padding:20px 22px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- AUTH -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <svg viewBox="0 0 453 67" xmlns="http://www.w3.org/2000/svg">
+        <polygon fill="#26ADE4" points="49,64 39.5,23.7 29.7,64 17.5,64 0,2 13.8,2 24,42.2 32.6,2 46.2,2 55.6,42.2 65.7,2 78.9,2 61.6,64"/>
+        <path fill="#26ADE4" d="M85.5,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H85.5zm19.1-7.6c0-1.7-.4-3.2-.9-4.4s-1.2-2.3-2.1-3.2-1.9-1.5-3-1.9-2.3-.6-3.5-.6c-2.4,0-4.5.9-6.3,2.7s-2.8,4.2-3,7.4H104.7z"/>
+        <rect fill="#26ADE4" x="120.9" y="1.3" width="12.1" height="62.7"/>
+        <path fill="#26ADE4" d="M142.5,64V26.7h-6.8V18.1h6.8C142.5,6.9,149,1.3,162,1.3v9.8c-1.6,0-2.8.1-3.8.3s-1.7.6-2.3,1.2-.9,1.3-1.2,2.2-.3,2-.3,3.3h7.8v8.6h-7.8V64H142.5z"/>
+        <path fill="#26ADE4" d="M191.7,64c-.4-1.2-.6-2.6-.8-4.1-1.4,1.6-3.3,2.9-5.7,3.9s-5.1,1.4-8.2,1.4c-5.3,0-9.2-1.2-11.6-3.5s-3.7-5.4-3.7-9.1c0-3.3.5-5.9,1.6-7.9s2.5-3.5,4.4-4.6,4.1-1.9,6.7-2.5,5.4-1,8.4-1.5,5.1-1,6.2-1.7,1.6-1.9,1.6-3.5c0-1.5-.7-2.7-2.1-3.5s-3.3-1.3-5.6-1.3c-2.8,0-4.8.6-6,1.9s-2,2.9-2.3,4.9h-11.3c.1-2.4.5-4.5,1.2-6.5s1.9-3.7,3.5-5.1,3.6-2.5,6.2-3.3,5.7-1.2,9.3-1.2c3.6,0,6.7.4,9.2,1.2s4.5,2,6.1,3.5,2.6,3.4,3.3,5.7,1,4.8,1,7.7V64H191.7z"/>
+        <path fill="#26ADE4" d="M207.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H207.8z"/>
+        <path fill="#26ADE4" d="M245.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H245.9z"/>
+        <path fill="#26ADE4" d="M335.5,42.7c-.7,3.5-1.8,6.8-3.3,9.6s-3.4,5.3-5.6,7.4-4.9,3.6-7.9,4.8-6.3,1.7-9.9,1.7c-4,0-7.8-.7-11.3-2.1s-6.6-3.4-9.1-6.2-4.6-6.1-6-10.1-2.2-8.7-2.2-14c0-5.2.7-9.9,2-14.1s3.2-7.7,5.7-10.6,5.5-5.1,9.1-6.7S304.6,0,309.1,0c3.9,0,7.4.6,10.5,1.7s5.9,2.7,8.1,4.8,4.1,4.4,5.4,7.1,2.2,5.7,2.5,8.8h-13c-.9-3.6-2.6-6.3-5-8.3s-5.3-2.9-8.4-2.9c-5.4,0-9.4,1.9-11.9,5.8s-3.8,9.2-3.8,16c0,6.9,1.3,12.3,3.8,16.1s6.3,5.7,11.3,5.7c3.9,0,7-1,9.3-3.1s3.9-5.1,4.8-9H335.5z"/>
+        <path fill="#26ADE4" d="M366.7,64c-.4-1.2-.6-2.6-.8-4.1-1.4,1.6-3.3,2.9-5.7,3.9s-5.1,1.4-8.2,1.4c-5.3,0-9.2-1.2-11.6-3.5s-3.7-5.4-3.7-9.1c0-3.3.5-5.9,1.6-7.9s2.5-3.5,4.4-4.6,4.1-1.9,6.7-2.5,5.4-1,8.4-1.5,5.1-1,6.2-1.7,1.6-1.9,1.6-3.5c0-1.5-.7-2.7-2.1-3.5s-3.3-1.3-5.6-1.3c-2.8,0-4.8.6-6,1.9s-2,2.9-2.3,4.9h-11.3c.1-2.4.5-4.5,1.2-6.5s1.9-3.7,3.5-5.1,3.6-2.5,6.2-3.3,5.7-1.2,9.3-1.2c3.6,0,6.7.4,9.2,1.2s4.5,2,6.1,3.5,2.6,3.4,3.3,5.7,1,4.8,1,7.7V64H366.7z"/>
+        <path fill="#26ADE4" d="M382.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H382.8z"/>
+        <path fill="#26ADE4" d="M420.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H420.9z"/>
+      </svg>
+    </div>
+    <div class="auth-title">Accedi al gestionale</div>
+    <div class="auth-sub">Reparto Patrocini — WelfareCare</div>
+    <div class="auth-err" id="authErr"></div>
+    <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="loginEmail" placeholder="nome@welfarecare.it"/></div>
+    <div class="fg"><div class="fl">Password</div><input class="fi" type="password" id="loginPassword" placeholder="••••••••"/></div>
+    <button class="btn btnp" onclick="login()" id="loginBtn">Accedi</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appWrap">
+  <div class="topnav">
+    <div style="flex-shrink:0;width:160px;height:24px;overflow:hidden">
+      <svg viewBox="0 0 453 67" xmlns="http://www.w3.org/2000/svg" style="width:160px;height:24px;display:block">
+        <polygon fill="#26ADE4" points="49,64 39.5,23.7 29.7,64 17.5,64 0,2 13.8,2 24,42.2 32.6,2 46.2,2 55.6,42.2 65.7,2 78.9,2 61.6,64"/>
+        <path fill="#26ADE4" d="M85.5,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H85.5zm19.1-7.6c0-1.7-.4-3.2-.9-4.4s-1.2-2.3-2.1-3.2-1.9-1.5-3-1.9-2.3-.6-3.5-.6c-2.4,0-4.5.9-6.3,2.7s-2.8,4.2-3,7.4H104.7z"/>
+        <rect fill="#26ADE4" x="120.9" y="1.3" width="12.1" height="62.7"/>
+        <path fill="#26ADE4" d="M142.5,64V26.7h-6.8V18.1h6.8C142.5,6.9,149,1.3,162,1.3v9.8c-1.6,0-2.8.1-3.8.3s-1.7.6-2.3,1.2-.9,1.3-1.2,2.2-.3,2-.3,3.3h7.8v8.6h-7.8V64H142.5z"/>
+        <path fill="#26ADE4" d="M191.7,64c-.4-1.2-.6-2.6-.8-4.1-1.4,1.6-3.3,2.9-5.7,3.9s-5.1,1.4-8.2,1.4c-5.3,0-9.2-1.2-11.6-3.5s-3.7-5.4-3.7-9.1c0-3.3.5-5.9,1.6-7.9s2.5-3.5,4.4-4.6,4.1-1.9,6.7-2.5,5.4-1,8.4-1.5,5.1-1,6.2-1.7,1.6-1.9,1.6-3.5c0-1.5-.7-2.7-2.1-3.5s-3.3-1.3-5.6-1.3c-2.8,0-4.8.6-6,1.9s-2,2.9-2.3,4.9h-11.3c.1-2.4.5-4.5,1.2-6.5s1.9-3.7,3.5-5.1,3.6-2.5,6.2-3.3,5.7-1.2,9.3-1.2c3.6,0,6.7.4,9.2,1.2s4.5,2,6.1,3.5,2.6,3.4,3.3,5.7,1,4.8,1,7.7V64H191.7z"/>
+        <path fill="#26ADE4" d="M207.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H207.8z"/>
+        <path fill="#26ADE4" d="M245.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H245.9zm19.1-7.6c0-1.7-.4-3.2-.9-4.4s-1.2-2.3-2.1-3.2-1.9-1.5-3-1.9-2.3-.6-3.5-.6c-2.4,0-4.5.9-6.3,2.7s-2.8,4.2-3,7.4H265z"/>
+        <path fill="#26ADE4" d="M335.5,42.7c-.7,3.5-1.8,6.8-3.3,9.6s-3.4,5.3-5.6,7.4-4.9,3.6-7.9,4.8-6.3,1.7-9.9,1.7c-4,0-7.8-.7-11.3-2.1s-6.6-3.4-9.1-6.2-4.6-6.1-6-10.1-2.2-8.7-2.2-14c0-5.2.7-9.9,2-14.1s3.2-7.7,5.7-10.6,5.5-5.1,9.1-6.7S304.6,0,309.1,0c3.9,0,7.4.6,10.5,1.7s5.9,2.7,8.1,4.8,4.1,4.4,5.4,7.1,2.2,5.7,2.5,8.8h-13c-.9-3.6-2.6-6.3-5-8.3s-5.3-2.9-8.4-2.9c-5.4,0-9.4,1.9-11.9,5.8s-3.8,9.2-3.8,16c0,6.9,1.3,12.3,3.8,16.1s6.3,5.7,11.3,5.7c3.9,0,7-1,9.3-3.1s3.9-5.1,4.8-9H335.5z"/>
+        <path fill="#26ADE4" d="M366.7,64c-.4-1.2-.6-2.6-.8-4.1-1.4,1.6-3.3,2.9-5.7,3.9s-5.1,1.4-8.2,1.4c-5.3,0-9.2-1.2-11.6-3.5s-3.7-5.4-3.7-9.1c0-3.3.5-5.9,1.6-7.9s2.5-3.5,4.4-4.6,4.1-1.9,6.7-2.5,5.4-1,8.4-1.5,5.1-1,6.2-1.7,1.6-1.9,1.6-3.5c0-1.5-.7-2.7-2.1-3.5s-3.3-1.3-5.6-1.3c-2.8,0-4.8.6-6,1.9s-2,2.9-2.3,4.9h-11.3c.1-2.4.5-4.5,1.2-6.5s1.9-3.7,3.5-5.1,3.6-2.5,6.2-3.3,5.7-1.2,9.3-1.2c3.6,0,6.7.4,9.2,1.2s4.5,2,6.1,3.5,2.6,3.4,3.3,5.7,1,4.8,1,7.7V64H366.7z"/>
+        <path fill="#26ADE4" d="M382.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H382.8z"/>
+        <path fill="#26ADE4" d="M420.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H420.9zm19.1-7.6c0-1.7-.4-3.2-.9-4.4s-1.2-2.3-2.1-3.2-1.9-1.5-3-1.9-2.3-.6-3.5-.6c-2.4,0-4.5.9-6.3,2.7s-2.8,4.2-3,7.4H440z"/>
+      </svg>
+    </div>
+    <div class="topnav-div"></div>
+    <div class="topnav-dept">Reparto Patrocini</div>
+    <div class="topnav-spacer"></div>
+    <div class="topnav-search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10.5 10.5l3 3"/></svg>
+      <input placeholder="Cerca pratica, utente..." id="searchInput" oninput="handleSearch(this.value)"/>
+    </div>
+    <div class="topnav-user" onclick="toggleUserMenu()">
+      <div class="av" id="topAv">--</div>
+      <div>
+        <div style="font-size:12px;font-weight:500" id="topName">Utente</div>
+        <div style="font-size:10px;color:var(--text3)" id="topRole">—</div>
+      </div>
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-item" onclick="nav('impost',null)">Impostazioni</div>
+        <div class="user-menu-item danger" onclick="logout()">Esci</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <nav class="side">
+      <div class="snl">Principale</div>
+      <div class="ni on" onclick="nav('dash',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="ni" onclick="nav('prat',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3"/><path d="M5 8h6M5 11h4"/></svg>
+        Pratiche
+        <span class="nibadge" id="praticheBadge">0</span>
+      </div>
+      <div class="ni" onclick="nav('terr',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5z"/></svg>
+        Territori
+      </div>
+      <div class="snl admin-only">Admin</div>
+      <div class="ni admin-only" onclick="nav('utenti',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/><path d="M11 7.5a2.5 2.5 0 1 0 0-5M15 14c0-2.5-1.5-4.5-4-5"/></svg>
+        Utenti & Ruoli
+      </div>
+      <div class="ni" onclick="nav('impost',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+        Impostazioni
+      </div>
+      <div class="side-foot">
+        <div class="av" id="sideAv">--</div>
+        <div>
+          <div style="font-size:12px;font-weight:500" id="sideName">Utente</div>
+          <div style="font-size:10px;color:var(--text3)" id="sideRole">—</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="subbar">
+        <div>
+          <div class="subbar-crumb"><span>Patrocini</span> › <span id="crumb">Dashboard</span></div>
+          <div class="subbar-title" id="ttl">Dashboard</div>
+        </div>
+        <div class="subbar-actions">
+          <button class="btn btns" id="btnNuovaPratica" onclick="openModalNuovaPratica()">+ Nuova pratica</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- DASHBOARD -->
+        <div class="sec on" id="s-dash">
+          <div class="kpis">
+            <div class="kpi"><div class="kpil">Pratiche attive</div><div class="kpiv" id="kpiAttive">—</div><div class="kpis2"><span class="kdot"></span>totale aperte</div></div>
+            <div class="kpi"><div class="kpil">In attesa</div><div class="kpiv" id="kpiAttesa" style="color:#854f0b">—</div><div class="kpis2">da assegnare</div></div>
+            <div class="kpi"><div class="kpil">Nuove (30gg)</div><div class="kpiv" id="kpiNuove" style="color:#3b6d11">—</div><div class="kpis2">ultimo mese</div></div>
+            <div class="kpi"><div class="kpil">Territori</div><div class="kpiv" id="kpiTerritori">—</div><div class="kpis2">comuni attivi</div></div>
+          </div>
+          <div class="g32">
+            <div class="card">
+              <div class="ch"><span class="ctt">Pratiche recenti</span><button class="btn btns" onclick="nav('prat',document.querySelectorAll('.ni')[1])">Vedi tutte →</button></div>
+              <table class="tbl">
+                <thead><tr><th style="width:42px">#</th><th>Richiedente</th><th>Territorio</th><th>Stato</th></tr></thead>
+                <tbody id="dashPratiche"><tr><td colspan="4" class="loading">Caricamento...</td></tr></tbody>
+              </table>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="card">
+                <div class="ch"><span class="ctt">Attività recente</span></div>
+                <div id="dashAttivita"><div class="loading">Caricamento...</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRATICHE -->
+        <div class="sec" id="s-prat">
+          <div class="card">
+            <div class="ch">
+              <span class="ctt" id="pratListTitle">Pratiche</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="fsel" style="font-size:11px;padding:5px 9px;width:auto" id="filterStato" onchange="loadPratiche()">
+                  <option value="">Tutti gli stati</option>
+                  <option value="nuova">Nuova</option>
+                  <option value="in_corso">In corso</option>
+                  <option value="in_attesa">In attesa</option>
+                  <option value="chiusa">Chiusa</option>
+                  <option value="sospesa">Sospesa</option>
+                </select>
+                <select class="fsel" style="font-size:11px;padding:5px 9px;width:auto" id="filterComune" onchange="loadPratiche()">
+                  <option value="">Tutti i territori</option>
+                </select>
+              </div>
+            </div>
+            <table class="tbl">
+              <thead><tr><th style="width:48px">ID</th><th>Richiedente</th><th>Territorio</th><th>Tipo</th><th>Priorità</th><th>Data</th><th>Stato</th></tr></thead>
+              <tbody id="pratListBody"><tr><td colspan="7" class="loading">Caricamento...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TERRITORI -->
+        <div class="sec" id="s-terr">
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px">
+            <button class="btn btns admin-only" onclick="openModalZona()">+ Aggiungi zona</button>
+            <button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc);font-size:12px" onclick="openModalComune()">+ Aggiungi comune</button>
+          </div>
+          <div class="g3" id="terrGrid"><div class="loading">Caricamento territori...</div></div>
+        </div>
+
+        <!-- UTENTI (solo admin) -->
+        <div class="sec" id="s-utenti">
+          <div class="g2">
+            <div class="card">
+              <div class="ch"><span class="ctt">Account</span><button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc);font-size:11px" onclick="openModalUtente()">+ Nuovo account</button></div>
+              <table class="tbl">
+                <thead><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Zona</th><th>Stato</th><th></th></tr></thead>
+                <tbody id="utentiBody"><tr><td colspan="6" class="loading">Caricamento...</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <div class="ch"><span class="ctt">Invita nuovo utente</span></div>
+              <div class="fgrid">
+                <div class="fg full"><div class="fl">Email</div><input class="fi" id="inviteEmail" placeholder="utente@welfarecare.it" type="email"/></div>
+                <div class="fg"><div class="fl">Ruolo</div>
+                  <select class="fsel" id="inviteRuolo">
+                    <option value="operatore">Operatore</option>
+                    <option value="supervisore">Supervisore</option>
+                    <option value="visualizzatore">Visualizzatore</option>
+                  </select>
+                </div>
+                <div class="fg"><div class="fl">Zona</div>
+                  <select class="fsel" id="inviteZona"><option value="">—</option></select>
+                </div>
+                <div class="fg full"><div class="fl">Password temporanea</div><input class="fi" id="invitePassword" type="password" placeholder="Min. 8 caratteri"/></div>
+              </div>
+              <div class="form-actions"><button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc);font-size:11px" onclick="creaUtente()">Crea account</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IMPOSTAZIONI -->
+        <div class="sec" id="s-impost">
+          <div class="card" style="max-width:500px">
+            <div class="ch"><span class="ctt">Il tuo profilo</span></div>
+            <div class="fgrid">
+              <div class="fg"><div class="fl">Nome</div><input class="fi" id="profNome"/></div>
+              <div class="fg"><div class="fl">Cognome</div><input class="fi" id="profCognome"/></div>
+              <div class="fg full"><div class="fl">Email</div><input class="fi" id="profEmail" disabled style="opacity:.6"/></div>
+              <div class="fg full"><div class="fl">Nuova password</div><input class="fi" id="profPassword" type="password" placeholder="Lascia vuoto per non cambiare"/></div>
+            </div>
+            <div class="form-actions"><button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc);font-size:11px" onclick="salvaProfilo()">Salva modifiche</button></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUOVA PRATICA -->
+<div class="modal-bg" id="modalPratica">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalPraticaTitle">Nuova pratica</div>
+      <button class="modal-close" onclick="closeModal('modalPratica')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid" style="padding:0">
+        <div class="fg"><div class="fl">Nome richiedente</div><input class="fi" id="pNome" placeholder="Mario"/></div>
+        <div class="fg"><div class="fl">Cognome richiedente</div><input class="fi" id="pCognome" placeholder="Rossi"/></div>
+        <div class="fg"><div class="fl">Codice fiscale</div><input class="fi" id="pCf" placeholder="RSSMRA80A01..."/></div>
+        <div class="fg"><div class="fl">Telefono</div><input class="fi" id="pTel" placeholder="+39 ..."/></div>
+        <div class="fg full"><div class="fl">Email</div><input class="fi" id="pEmail" type="email" placeholder="richiedente@email.it"/></div>
+        <div class="fg"><div class="fl">Tipo pratica</div>
+          <select class="fsel" id="pTipo">
+            <option value="legale">Legale</option>
+            <option value="sociale">Sociale</option>
+            <option value="sanitario">Sanitario</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fl">Priorità</div>
+          <select class="fsel" id="pPriorita">
+            <option value="bassa">Bassa</option>
+            <option value="media" selected>Media</option>
+            <option value="alta">Alta</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fl">Comune</div>
+          <select class="fsel" id="pComune"><option value="">Seleziona...</option></select>
+        </div>
+        <div class="fg"><div class="fl">Stato</div>
+          <select class="fsel" id="pStato">
+            <option value="nuova">Nuova</option>
+            <option value="in_corso">In corso</option>
+            <option value="in_attesa">In attesa</option>
+          </select>
+        </div>
+        <div class="fg full"><div class="fl">Note</div><textarea class="fi" id="pNote" rows="3" placeholder="Note aggiuntive..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btns" onclick="closeModal('modalPratica')">Annulla</button>
+      <button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc)" onclick="salvaPratica()">Salva pratica</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUOVO COMUNE -->
+<div class="modal-bg" id="modalComune">
+  <div class="modal" style="width:400px">
+    <div class="modal-head">
+      <div class="modal-title">Aggiungi comune</div>
+      <button class="modal-close" onclick="closeModal('modalComune')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid" style="padding:0">
+        <div class="fg full"><div class="fl">Nome comune</div><input class="fi" id="cNome" placeholder="Es. Mestre Nord"/></div>
+        <div class="fg full"><div class="fl">Zona</div>
+          <select class="fsel" id="cZona"><option value="">Seleziona zona...</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btns" onclick="closeModal('modalComune')">Annulla</button>
+      <button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc)" onclick="salvaComune()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUOVA ZONA -->
+<div class="modal-bg" id="modalZona">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <div class="modal-title">Aggiungi zona</div>
+      <button class="modal-close" onclick="closeModal('modalZona')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid" style="padding:0">
+        <div class="fg full"><div class="fl">Nome zona</div><input class="fi" id="zNome" placeholder="Es. Zona Est"/></div>
+        <div class="fg full"><div class="fl">Colore</div>
+          <select class="fsel" id="zColore">
+            <option value="blue">Blu</option>
+            <option value="green">Verde</option>
+            <option value="amber">Arancio</option>
+            <option value="red">Rosso</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btns" onclick="closeModal('modalZona')">Annulla</button>
+      <button class="btn" style="background:var(--wc);color:#fff;border-color:var(--wc)" onclick="salvaZona()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://koshtsgvfqwuhoykfqai.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
+const { createClient } = supabase;
+const sb = createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+let currentProfilo = null;
+let zoneCache = [];
+let comuniCache = [];
+
+// ─── AUTH ───────────────────────────────────────────
+async function login() {
+  const email = document.getElementById('loginEmail').value;
+  const pwd = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('authErr');
+  err.style.display = 'none';
+  btn.textContent = 'Accesso in corso...';
+  btn.disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  if (error) {
+    err.textContent = 'Credenziali non valide. Riprova.';
+    err.style.display = 'block';
+    btn.textContent = 'Accedi';
+    btn.disabled = false;
+    return;
+  }
+  await initApp(data.user);
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  document.getElementById('appWrap').classList.remove('visible');
+  document.getElementById('authWrap').style.display = 'flex';
+  currentUser = null; currentProfilo = null;
+}
+
+async function initApp(user) {
+  currentUser = user;
+  document.getElementById('authWrap').style.display = 'none';
+  document.getElementById('appWrap').classList.add('visible');
+  const { data: profilo } = await sb.from('profili').select('*').eq('id', user.id).single();
+  currentProfilo = profilo;
+  const nome = profilo ? `${profilo.nome || ''} ${profilo.cognome || ''}`.trim() || user.email : user.email;
+  const ruolo = profilo?.ruolo || 'operatore';
+  const initials = nome.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('topAv').textContent = initials;
+  document.getElementById('topName').textContent = nome;
+  document.getElementById('topRole').textContent = ruoloLabel(ruolo);
+  document.getElementById('sideAv').textContent = initials;
+  document.getElementById('sideName').textContent = nome;
+  document.getElementById('sideRole').textContent = ruoloLabel(ruolo);
+  document.getElementById('profEmail').value = user.email;
+  document.getElementById('profNome').value = profilo?.nome || '';
+  document.getElementById('profCognome').value = profilo?.cognome || '';
+  if (ruolo === 'superadmin') {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+  }
+  await loadCache();
+  await loadDashboard();
+  await loadPratiche();
+}
+
+function ruoloLabel(r) {
+  const m = {superadmin:'Super amministratore',supervisore:'Supervisore',operatore:'Operatore',visualizzatore:'Visualizzatore'};
+  return m[r] || r;
+}
+
+// ─── CACHE ───────────────────────────────────────────
+async function loadCache() {
+  const [{ data: zone }, { data: comuni }] = await Promise.all([
+    sb.from('zone').select('*').order('nome'),
+    sb.from('comuni').select('*, zone(nome,colore)').order('nome')
+  ]);
+  zoneCache = zone || [];
+  comuniCache = comuni || [];
+  populateComuniSelects();
+  populateZoneSelects();
+}
+
+function populateComuniSelects() {
+  ['pComune','filterComune'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const curr = sel.value;
+    sel.innerHTML = id === 'filterComune' ? '<option value="">Tutti i territori</option>' : '<option value="">Seleziona...</option>';
+    comuniCache.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.nome;
+      sel.appendChild(opt);
+    });
+    sel.value = curr;
+  });
+}
+
+function populateZoneSelects() {
+  ['cZona','inviteZona'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">—</option>';
+    zoneCache.forEach(z => {
+      const opt = document.createElement('option');
+      opt.value = z.id; opt.textContent = z.nome;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ─── DASHBOARD ───────────────────────────────────────
+async function loadDashboard() {
+  const [
+    { count: attive },
+    { count: attesa },
+    { count: nuove },
+    { count: terrCount },
+    { data: recenti },
+    { data: attivita }
+  ] = await Promise.all([
+    sb.from('pratiche').select('*',{count:'exact',head:true}).not('stato','eq','chiusa'),
+    sb.from('pratiche').select('*',{count:'exact',head:true}).eq('stato','in_attesa'),
+    sb.from('pratiche').select('*',{count:'exact',head:true}).gte('created_at', new Date(Date.now()-30*86400000).toISOString()),
+    sb.from('comuni').select('*',{count:'exact',head:true}),
+    sb.from('pratiche').select('numero, richiedente_nome, richiedente_cognome, stato, comuni(nome)').order('created_at',{ascending:false}).limit(5),
+    sb.from('attivita').select('descrizione, created_at, tipo').order('created_at',{ascending:false}).limit(5)
+  ]);
+  document.getElementById('kpiAttive').textContent = attive ?? '—';
+  document.getElementById('kpiAttesa').textContent = attesa ?? '—';
+  document.getElementById('kpiNuove').textContent = nuove ?? '—';
+  document.getElementById('kpiTerritori').textContent = terrCount ?? '—';
+  document.getElementById('praticheBadge').textContent = attive ?? '0';
+
+  const tbody = document.getElementById('dashPratiche');
+  if (!recenti?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Nessuna pratica</td></tr>'; }
+  else {
+    tbody.innerHTML = recenti.map(p => `
+      <tr onclick="openPratica('${p.numero}')">
+        <td style="color:var(--text3)">#${p.numero}</td>
+        <td>${p.richiedente_nome} ${p.richiedente_cognome}</td>
+        <td>${p.comuni?.nome || '—'}</td>
+        <td>${statoBadge(p.stato)}</td>
+      </tr>`).join('');
+  }
+
+  const divAtt = document.getElementById('dashAttivita');
+  if (!attivita?.length) { divAtt.innerHTML = '<div class="empty">Nessuna attività</div>'; }
+  else {
+    divAtt.innerHTML = attivita.map(a => `
+      <div class="ait">
+        <div class="adot" style="background:${dotColor(a.tipo)}"></div>
+        <div>
+          <div>${a.descrizione || '—'}</div>
+          <div style="color:var(--text3);font-size:11px">${timeAgo(a.created_at)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ─── PRATICHE ────────────────────────────────────────
+async function loadPratiche() {
+  document.getElementById('pratListBody').innerHTML = '<tr><td colspan="7" class="loading">Caricamento...</td></tr>';
+  let query = sb.from('pratiche').select('numero, richiedente_nome, richiedente_cognome, tipo, stato, priorita, created_at, comuni(nome)').order('created_at',{ascending:false});
+  const stato = document.getElementById('filterStato').value;
+  const comune = document.getElementById('filterComune').value;
+  if (stato) query = query.eq('stato', stato);
+  if (comune) query = query.eq('comune_id', comune);
+  const { data, count } = await query;
+  document.getElementById('pratListTitle').textContent = `Pratiche (${data?.length || 0})`;
+  const tbody = document.getElementById('pratListBody');
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessuna pratica trovata</td></tr>'; return; }
+  tbody.innerHTML = data.map(p => `
+    <tr onclick="openPratica('${p.numero}')">
+      <td style="color:var(--text3)">#${p.numero}</td>
+      <td>${p.richiedente_nome} ${p.richiedente_cognome}</td>
+      <td>${p.comuni?.nome || '—'}</td>
+      <td>${tipoLabel(p.tipo)}</td>
+      <td>${prioritaBadge(p.priorita)}</td>
+      <td>${formatDate(p.created_at)}</td>
+      <td>${statoBadge(p.stato)}</td>
+    </tr>`).join('');
+}
+
+// ─── TERRITORI ───────────────────────────────────────
+async function loadTerritori() {
+  const grid = document.getElementById('terrGrid');
+  grid.innerHTML = '<div class="loading">Caricamento...</div>';
+  await loadCache();
+  if (!zoneCache.length) { grid.innerHTML = '<div class="empty">Nessuna zona configurata</div>'; return; }
+  const colori = {blue:{bg:'#e8f6fc',text:'#1a8fc2',iconStroke:'#26ADE4',btnBg:'#e8f6fc',btnColor:'#1a8fc2',btnBorder:'#b3e2f5'},green:{bg:'#eaf3de',text:'#3b6d11',iconStroke:'#3b6d11',btnBg:'#eaf3de',btnColor:'#3b6d11',btnBorder:'#c0dd97'},amber:{bg:'#faeeda',text:'#854f0b',iconStroke:'#854f0b',btnBg:'#faeeda',btnColor:'#854f0b',btnBorder:'#fac775'},red:{bg:'#fcebeb',text:'#a32d2d',iconStroke:'#a32d2d',btnBg:'#fcebeb',btnColor:'#a32d2d',btnBorder:'#f09595'}};
+  grid.innerHTML = zoneCache.map(z => {
+    const c = colori[z.colore] || colori.blue;
+    const comuni = comuniCache.filter(cm => cm.zona_id === z.id);
+    return `<div class="card">
+      <div class="ch" style="background:${c.bg}">
+        <span class="ctt" style="color:${c.text}">${z.nome}</span>
+        <span class="bx" style="background:${c.bg};color:${c.text};border:1px solid ${c.btnBorder}">${comuni.length} comuni</span>
+      </div>
+      ${comuni.length ? comuni.map(cm => `
+        <div class="tirow">
+          <div class="tiico" style="background:${c.bg}">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="${c.iconStroke}" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">${cm.nome}</div>
+          </div>
+          <button class="btn btns" style="font-size:10px;padding:3px 8px" onclick="eliminaComune('${cm.id}','${cm.nome}')">✕</button>
+        </div>`).join('') : '<div class="empty" style="padding:16px">Nessun comune</div>'}
+      <div style="padding:10px 14px;border-top:1px solid var(--border)">
+        <button class="btn" style="font-size:10px;width:100%;color:${c.text};border-color:${c.btnBorder}" onclick="openModalComuneInZona('${z.id}')">+ Aggiungi comune</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── UTENTI ──────────────────────────────────────────
+async function loadUtenti() {
+  const { data } = await sb.from('profili').select('*, zone(nome)').order('created_at');
+  const tbody = document.getElementById('utentiBody');
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Nessun utente</td></tr>'; return; }
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td>${u.nome || ''} ${u.cognome || ''}</td>
+      <td style="color:var(--text3)">${u.id.slice(0,8)}...</td>
+      <td>${ruoloBadge(u.ruolo)}</td>
+      <td>${u.zone?.nome || '—'}</td>
+      <td><span class="bx ${u.attivo ? 'bg' : 'ba'}">${u.attivo ? 'Attivo' : 'Inattivo'}</span></td>
+      <td><button class="btn btns" style="font-size:10px;padding:3px 8px" onclick="toggleAttivo('${u.id}',${u.attivo})">${u.attivo ? 'Disattiva' : 'Attiva'}</button></td>
+    </tr>`).join('');
+}
+
+// ─── ACTIONS ─────────────────────────────────────────
+async function salvaPratica() {
+  const nome = document.getElementById('pNome').value.trim();
+  const cognome = document.getElementById('pCognome').value.trim();
+  if (!nome || !cognome) { toast('Nome e cognome obbligatori','error'); return; }
+  const { error } = await sb.from('pratiche').insert({
+    richiedente_nome: nome,
+    richiedente_cognome: cognome,
+    richiedente_cf: document.getElementById('pCf').value.trim() || null,
+    richiedente_telefono: document.getElementById('pTel').value.trim() || null,
+    richiedente_email: document.getElementById('pEmail').value.trim() || null,
+    tipo: document.getElementById('pTipo').value,
+    priorita: document.getElementById('pPriorita').value,
+    stato: document.getElementById('pStato').value,
+    comune_id: document.getElementById('pComune').value || null,
+    note: document.getElementById('pNote').value.trim() || null,
+  });
+  if (error) { toast('Errore nel salvataggio: '+error.message,'error'); return; }
+  await sb.from('attivita').insert({ tipo:'pratica_creata', descrizione:`Pratica aperta per ${nome} ${cognome}`, utente_id: currentUser.id });
+  toast('Pratica creata con successo','success');
+  closeModal('modalPratica');
+  await loadPratiche();
+  await loadDashboard();
+}
+
+async function salvaComune() {
+  const nome = document.getElementById('cNome').value.trim();
+  const zona_id = document.getElementById('cZona').value;
+  if (!nome) { toast('Inserisci il nome del comune','error'); return; }
+  const { error } = await sb.from('comuni').insert({ nome, zona_id: zona_id || null });
+  if (error) { toast('Errore: '+error.message,'error'); return; }
+  toast('Comune aggiunto','success');
+  closeModal('modalComune');
+  await loadCache();
+  await loadTerritori();
+}
+
+async function salvaZona() {
+  const nome = document.getElementById('zNome').value.trim();
+  if (!nome) { toast('Inserisci il nome della zona','error'); return; }
+  const { error } = await sb.from('zone').insert({ nome, colore: document.getElementById('zColore').value });
+  if (error) { toast('Errore: '+error.message,'error'); return; }
+  toast('Zona aggiunta','success');
+  closeModal('modalZona');
+  await loadCache();
+  await loadTerritori();
+}
+
+async function eliminaComune(id, nome) {
+  if (!confirm(`Rimuovere "${nome}"?`)) return;
+  const { error } = await sb.from('comuni').delete().eq('id', id);
+  if (error) { toast('Errore: '+error.message,'error'); return; }
+  toast('Comune rimosso','success');
+  await loadCache();
+  await loadTerritori();
+}
+
+async function creaUtente() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const pwd = document.getElementById('invitePassword').value;
+  const ruolo = document.getElementById('inviteRuolo').value;
+  const zona_id = document.getElementById('inviteZona').value || null;
+  if (!email || !pwd) { toast('Email e password obbligatori','error'); return; }
+  const { data, error } = await sb.auth.admin?.createUser({ email, password: pwd, email_confirm: true });
+  if (error) { toast('Usa Supabase Dashboard per creare utenti admin. Errore: '+error.message,'error'); return; }
+  if (data?.user) {
+    await sb.from('profili').upsert({ id: data.user.id, ruolo, zona_id });
+  }
+  toast('Account creato','success');
+  await loadUtenti();
+}
+
+async function toggleAttivo(id, attivo) {
+  await sb.from('profili').update({ attivo: !attivo }).eq('id', id);
+  toast(attivo ? 'Utente disattivato' : 'Utente attivato','success');
+  await loadUtenti();
+}
+
+async function salvaProfilo() {
+  const nome = document.getElementById('profNome').value.trim();
+  const cognome = document.getElementById('profCognome').value.trim();
+  const pwd = document.getElementById('profPassword').value;
+  await sb.from('profili').upsert({ id: currentUser.id, nome, cognome });
+  if (pwd) await sb.auth.updateUser({ password: pwd });
+  toast('Profilo aggiornato','success');
+}
+
+// ─── NAVIGATION ──────────────────────────────────────
+const titles = {dash:'Dashboard',prat:'Pratiche',terr:'Organizzazione Territori',utenti:'Utenti & Ruoli',impost:'Impostazioni'};
+function nav(id, el) {
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+  if (el) el.classList.add('on');
+  else { document.querySelectorAll('.ni').forEach(n => { if(n.onclick?.toString().includes(`'${id}'`)) n.classList.add('on'); }); }
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.getElementById('s-'+id).classList.add('on');
+  document.getElementById('ttl').textContent = titles[id] || id;
+  document.getElementById('crumb').textContent = titles[id] || id;
+  if (id === 'terr') loadTerritori();
+  if (id === 'utenti') loadUtenti();
+  if (id === 'prat') loadPratiche();
+}
+
+// ─── MODALS ──────────────────────────────────────────
+function openModalNuovaPratica() {
+  document.getElementById('pNome').value=''; document.getElementById('pCognome').value='';
+  document.getElementById('pCf').value=''; document.getElementById('pTel').value='';
+  document.getElementById('pEmail').value=''; document.getElementById('pNote').value='';
+  document.getElementById('modalPratica').classList.add('open');
+}
+function openModalComune() { document.getElementById('cNome').value=''; document.getElementById('modalComune').classList.add('open'); }
+function openModalComuneInZona(zonaId) { document.getElementById('cNome').value=''; document.getElementById('cZona').value=zonaId; document.getElementById('modalComune').classList.add('open'); }
+function openModalZona() { document.getElementById('zNome').value=''; document.getElementById('modalZona').classList.add('open'); }
+function openModalUtente() {}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openPratica(num) { /* futuro: scheda dettaglio */ toast(`Dettaglio pratica #${num} — prossimamente`,''); }
+
+// ─── UTILS ───────────────────────────────────────────
+function statoBadge(s) {
+  const m = {nuova:`<span class="bx bb">Nuova</span>`,in_corso:`<span class="bx bg">In corso</span>`,in_attesa:`<span class="bx ba">In attesa</span>`,chiusa:`<span class="bx bk">Chiusa</span>`,sospesa:`<span class="bx br">Sospesa</span>`};
+  return m[s] || s;
+}
+function prioritaBadge(p) {
+  const m = {alta:`<span class="bx br">Alta</span>`,media:`<span class="bx ba">Media</span>`,bassa:`<span class="bx bk">Bassa</span>`};
+  return m[p] || p;
+}
+function ruoloBadge(r) {
+  const m = {superadmin:`<span class="bx bwc">Super admin</span>`,supervisore:`<span class="bx bb">Supervisore</span>`,operatore:`<span class="bx bk">Operatore</span>`,visualizzatore:`<span class="bx" style="background:#f1efe8;color:#5f5e5a">Visualizzatore</span>`};
+  return m[r] || r;
+}
+function tipoLabel(t) { return t ? t.charAt(0).toUpperCase()+t.slice(1) : '—'; }
+function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+function timeAgo(d) {
+  if(!d) return '—';
+  const diff = Date.now() - new Date(d).getTime();
+  const min = Math.floor(diff/60000);
+  if(min < 60) return `${min} min fa`;
+  const h = Math.floor(min/60);
+  if(h < 24) return `${h}h fa`;
+  return `${Math.floor(h/24)}gg fa`;
+}
+function dotColor(tipo) { const m={pratica_creata:'#26ADE4',stato_cambiato:'#854f0b',pratica_chiusa:'#3b6d11'}; return m[tipo] || '#9da3b0'; }
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast '+(type||'');
+  t.style.display='block';
+  setTimeout(()=>{ t.style.display='none'; }, 3000);
+}
+function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('open'); }
+function handleSearch(q) { /* futuro */ }
+
+// Click fuori chiude menu
+document.addEventListener('click', e => {
+  if (!e.target.closest('.topnav-user')) document.getElementById('userMenu').classList.remove('open');
+  if (!e.target.closest('.modal') && !e.target.closest('.btn')) {
+    document.querySelectorAll('.modal-bg.open').forEach(m => {
+      if(e.target === m) m.classList.remove('open');
+    });
+  }
+});
+
+// Enter per login
+document.getElementById('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+
+// ─── INIT ─────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { await initApp(session.user); }
+})();
+</script>
+</body>
+</html>
