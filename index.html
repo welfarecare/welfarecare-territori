@@ -150,6 +150,35 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 .toast{position:fixed;bottom:22px;right:22px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none}
 .toast.success{background:#3b6d11}.toast.error{background:#a32d2d}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+/* PROGRAMMA */
+.inc-block{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:16px;overflow:hidden}
+.inc-hdr{padding:13px 18px;background:var(--wcl);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.inc-av{width:32px;height:32px;border-radius:50%;background:var(--wc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0}
+.inc-name{font-size:13px;font-weight:600;color:var(--wcd);flex:1}
+.inc-count{font-size:11px;color:var(--wcd)}
+.drag-list{padding:8px 0;min-height:48px}
+.drag-item{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--bd);cursor:grab;transition:background .12s;user-select:none}
+.drag-item:last-child{border-bottom:none}
+.drag-item:hover{background:var(--sur2)}
+.drag-item.dragging{opacity:.4;background:var(--wcl)}
+.drag-item.drag-over{border-top:2px solid var(--wc)}
+.drag-handle{color:var(--tx3);font-size:16px;flex-shrink:0;cursor:grab}
+.drag-num{width:24px;height:24px;border-radius:50%;background:var(--wc);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.drag-info{flex:1;min-width:0}
+.drag-comune{font-size:12px;font-weight:500;color:var(--tx)}
+.drag-sub{font-size:10px;color:var(--tx3)}
+.drag-actions{display:flex;gap:6px;flex-shrink:0}
+.stato-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px;cursor:pointer;border:none;font-family:var(--f)}
+.sp-pian{background:#e8f6fc;color:#1a8fc2}
+.sp-corso{background:#faeeda;color:#854f0b}
+.sp-comp{background:#eaf3de;color:#3b6d11}
+/* ARCHIVIO */
+.arch-year-block{margin-bottom:18px}
+.arch-year-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;margin-bottom:4px}
+.arch-year-hdr:hover{background:#ebebeb}
+.arch-year-lbl{font-size:13px;font-weight:600;color:var(--tx);flex:1}
+.arch-year-cnt{font-size:11px;color:var(--tx3)}
+.add-comune-row{display:flex;align-items:center;gap:8px;padding:10px 18px;border-top:1px solid var(--bd);background:var(--sur2)}
 </style>
 </head>
 <body>
@@ -236,6 +265,15 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
       <div class="ni adm" data-s="utenti" onclick="navTo('utenti')">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/><path d="M11 7.5a2.5 2.5 0 1 0 0-5M15 14c0-2.5-1.5-4.5-4-5"/></svg>
         Utenti & Ruoli
+      </div>
+      <div class="ni" data-s="programma" onclick="navTo('programma')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h12v2H2zM2 7h8v2H2zM2 12h10v2H2z"/><path d="M12 9l2 2-2 2"/></svg>
+        Programma
+        <span class="nib" id="prBadge">0</span>
+      </div>
+      <div class="ni" data-s="archivio" onclick="navTo('archivio')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 6h14"/><path d="M5 9h6"/></svg>
+        Archivio
       </div>
       <div class="ni" data-s="impost" onclick="navTo('impost')">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>
@@ -338,6 +376,35 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
           </div>
         </div>
 
+        <!-- PROGRAMMA -->
+        <div class="sec" id="s-programma">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <select class="fs" style="width:120px" id="prAnno" onchange="loadProgramma()">
+            </select>
+            <select class="fs" style="width:180px" id="prIncaricato" onchange="loadProgramma()">
+              <option value="">Tutti gli incaricati</option>
+            </select>
+            <div style="flex:1"></div>
+            <button class="btn btns" onclick="addAnno()" style="font-size:11px">+ Anno</button>
+            <button class="btn btnp" onclick="openModalAddComune()" style="font-size:12px">+ Aggiungi comune al piano</button>
+          </div>
+          <div id="programmaBody"><div class="loading">Caricamento...</div></div>
+        </div>
+
+        <!-- ARCHIVIO -->
+        <div class="sec" id="s-archivio">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <select class="fs" style="width:130px" id="archAnno" onchange="loadArchivio()">
+              <option value="">Tutti gli anni</option>
+            </select>
+            <select class="fs" style="width:180px" id="archIncaricato" onchange="loadArchivio()">
+              <option value="">Tutti gli incaricati</option>
+            </select>
+            <input class="fi" style="width:200px;margin:0;font-size:12px" placeholder="Cerca comune..." id="archSearch" oninput="loadArchivio()"/>
+          </div>
+          <div id="archivioBody"><div class="loading">Caricamento...</div></div>
+        </div>
+
         <!-- IMPOSTAZIONI -->
         <div class="sec" id="s-impost">
           <div class="card" style="max-width:460px">
@@ -410,6 +477,29 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
   </div>
 </div>
 
+<!-- MODAL AGGIUNGI COMUNE AL PROGRAMMA -->
+<div class="mbg" id="mAddComune">
+  <div class="modal" style="width:480px">
+    <div class="mh"><div class="mt">Aggiungi comune al programma</div><button class="mc" onclick="closeM('mAddComune')">✕</button></div>
+    <div class="mb">
+      <div class="fg"><div class="fl">Anno</div><select class="fs" id="acAnno"></select></div>
+      <div class="fg"><div class="fl">Incaricato *</div><select class="fs" id="acIncaricato"><option value="">Seleziona incaricato...</option></select></div>
+      <div class="fg"><div class="fl">Comune *</div><select class="fs" id="acComune"><option value="">Seleziona comune...</option></select></div>
+      <div class="fg"><div class="fl">Stato iniziale</div>
+        <select class="fs" id="acStato">
+          <option value="pianificato">Pianificato</option>
+          <option value="in_corso">In corso</option>
+        </select>
+      </div>
+      <div class="fg"><div class="fl">Note</div><textarea class="fi" id="acNote" rows="2" placeholder="Note opzionali..."></textarea></div>
+    </div>
+    <div class="mf">
+      <button class="btn btns" onclick="closeM('mAddComune')">Annulla</button>
+      <button class="btn btnp" onclick="salvaAddComune()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SB_URL='https://koshtsgvfqwuhoykfqai.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
@@ -446,6 +536,8 @@ async function init(u){
   document.getElementById('pCognome').value=pr?.cognome||'';
   if(ruolo==='superadmin')document.querySelectorAll('.adm').forEach(el=>el.style.display='');
   await loadP();await loadDash();await loadTerritori();
+  populateAnniSelect('prAnno');
+  populateAnniSelect('acAnno',true);
 }
 
 function rlbl(r){return{superadmin:'Super amministratore',supervisore:'Supervisore',operatore:'Operatore',visualizzatore:'Visualizzatore'}[r]||r;}
@@ -710,7 +802,7 @@ function closeM(id){document.getElementById(id).classList.remove('on');}
 function toggleMenu(){document.getElementById('uMenu').classList.toggle('on');}
 function handleSearch(q){if(document.getElementById('s-terr').classList.contains('on')){document.getElementById('tSearch').value=q;renderView();}}
 
-const NAV={dash:'Dashboard',terr:'Territori',utenti:'Utenti & Ruoli',impost:'Impostazioni'};
+const NAV={dash:'Dashboard',terr:'Territori',programma:'Programma di Sviluppo',archivio:'Archivio Edizioni',utenti:'Utenti & Ruoli',impost:'Impostazioni'};
 function navTo(id){
   document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.s===id));
   document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id==='s-'+id));
@@ -718,6 +810,8 @@ function navTo(id){
   document.getElementById('crumb').textContent=NAV[id]||id;
   document.getElementById('uMenu').classList.remove('on');
   if(id==='terr')renderView();
+  if(id==='programma')loadProgramma();
+  if(id==='archivio')loadArchivio();
   if(id==='utenti')loadUtenti();
 }
 
@@ -725,6 +819,296 @@ document.querySelectorAll('.mbg').forEach(m=>m.addEventListener('click',e=>{if(e
 document.addEventListener('click',e=>{if(!e.target.closest('.tn-u'))document.getElementById('uMenu').classList.remove('on');});
 document.getElementById('lPwd').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 document.getElementById('fReg').addEventListener('change',()=>{updateProv();renderView();});
+
+
+// ─── PROGRAMMA ────────────────────────────────────────
+let dragSrc = null;
+
+async function loadProgramma() {
+  const annoSel = document.getElementById('prAnno');
+  const incSel = document.getElementById('prIncaricato');
+  if (!annoSel.options.length) populateAnniSelect('prAnno');
+  if (incSel.options.length <= 1) populateIncaricatiSelect('prIncaricato');
+  populateIncaricatiSelect('archIncaricato');
+  populateAnniSelect('archAnno', true);
+  populateComuniSelect('acComune');
+  populateIncaricatiSelect('acIncaricato');
+  populateAnniSelect('acAnno');
+
+  const anno = parseInt(annoSel.value) || new Date().getFullYear();
+  const incId = incSel.value;
+  document.getElementById('prBadge').textContent = '';
+
+  let q = sb.from('programma').select('*, territori(comune,provincia,regione,cap,numero_piva), profili(nome,cognome)').eq('anno', anno).order('ordine');
+  if (incId) q = q.eq('incaricato_id', incId);
+  const { data } = await q;
+
+  document.getElementById('prBadge').textContent = data?.length || 0;
+  const body = document.getElementById('programmaBody');
+  if (!data?.length) { body.innerHTML = '<div class="empty">Nessun comune pianificato per questo anno.<br>Clicca "+ Aggiungi comune al piano" per iniziare.</div>'; return; }
+
+  // Raggruppa per incaricato
+  const byInc = {};
+  data.forEach(r => {
+    const k = r.incaricato_id || '__nessuno__';
+    if (!byInc[k]) byInc[k] = { profilo: r.profili, items: [] };
+    byInc[k].items.push(r);
+  });
+
+  body.innerHTML = Object.entries(byInc).map(([incId, grp]) => {
+    const nome = grp.profilo ? `${grp.profilo.nome||''} ${grp.profilo.cognome||''}`.trim() : 'Senza incaricato';
+    const ini = nome.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="inc-block">
+      <div class="inc-hdr">
+        <div class="inc-av">${ini}</div>
+        <div class="inc-name">${nome}</div>
+        <div class="inc-count">${grp.items.length} comuni</div>
+      </div>
+      <div class="drag-list" data-inc="${incId}" data-anno="${anno}">
+        ${grp.items.map((r,i) => dragItem(r, i+1)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Init drag & drop
+  document.querySelectorAll('.drag-item').forEach(initDrag);
+}
+
+function dragItem(r, n) {
+  const t = r.territori;
+  const sp = statoClass(r.stato);
+  const slbl = statoLabel(r.stato);
+  return `<div class="drag-item" draggable="true" data-id="${r.id}" data-inc="${r.incaricato_id}" data-anno="${r.anno}">
+    <span class="drag-handle">⠿</span>
+    <div class="drag-num">${n}</div>
+    <div class="drag-info">
+      <div class="drag-comune">${t?.comune||'—'}</div>
+      <div class="drag-sub">${t?.provincia||''} · ${t?.regione||''} ${t?.cap?'· '+t.cap:''}</div>
+    </div>
+    <button class="stato-pill ${sp}" onclick="cycleStato('${r.id}','${r.stato}')">${slbl}</button>
+    <div class="drag-actions">
+      <button class="btn btns" style="font-size:10px;padding:3px 8px" onclick="archiviaTerritorio('${r.id}')">Archivia</button>
+      <button class="btn btns" style="font-size:10px;padding:3px 8px;color:#a32d2d" onclick="rimuoviDaProgramma('${r.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+function statoClass(s) { return {pianificato:'sp-pian',in_corso:'sp-corso',completato:'sp-comp'}[s]||'sp-pian'; }
+function statoLabel(s) { return {pianificato:'Pianificato',in_corso:'In corso',completato:'Completato'}[s]||s; }
+
+function initDrag(el) {
+  el.addEventListener('dragstart', e => { dragSrc = el; el.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+  el.addEventListener('dragend', () => { dragSrc=null; document.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('dragging','drag-over')); });
+  el.addEventListener('dragover', e => { e.preventDefault(); if(dragSrc&&dragSrc!==el){ document.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over')); el.classList.add('drag-over'); } });
+  el.addEventListener('drop', async e => {
+    e.preventDefault();
+    if (!dragSrc || dragSrc === el) return;
+    const list = el.closest('.drag-list');
+    const items = [...list.querySelectorAll('.drag-item')];
+    const fromIdx = items.indexOf(dragSrc);
+    const toIdx = items.indexOf(el);
+    if (fromIdx === toIdx) return;
+    list.insertBefore(dragSrc, fromIdx < toIdx ? el.nextSibling : el);
+    await saveOrder(list);
+  });
+}
+
+async function saveOrder(list) {
+  const items = [...list.querySelectorAll('.drag-item')];
+  const updates = items.map((el, i) => ({ id: el.dataset.id, ordine: i + 1 }));
+  for (const u of updates) {
+    await sb.from('programma').update({ ordine: u.ordine }).eq('id', u.id);
+  }
+  // Aggiorna numeri visivi
+  items.forEach((el, i) => { const n = el.querySelector('.drag-num'); if(n) n.textContent = i+1; });
+  toast('Ordine salvato', 'success');
+}
+
+async function cycleStato(id, stato) {
+  const next = {pianificato:'in_corso', in_corso:'completato', completato:'pianificato'};
+  const nuovoStato = next[stato] || 'pianificato';
+  await sb.from('programma').update({ stato: nuovoStato }).eq('id', id);
+  await loadProgramma();
+}
+
+async function rimuoviDaProgramma(id) {
+  if (!confirm('Rimuovere questo comune dal programma?')) return;
+  await sb.from('programma').delete().eq('id', id);
+  toast('Rimosso dal programma', 'success');
+  await loadProgramma();
+}
+
+async function archiviaTerritorio(id) {
+  if (!confirm('Archiviare questo comune? Verrà spostato nell\'archivio edizioni.')) return;
+  const { data: r } = await sb.from('programma').select('*, territori(comune,provincia,regione,cap,popolazione,numero_piva)').eq('id', id).single();
+  if (!r) return;
+  const t = r.territori;
+  await sb.from('archivio').insert({
+    territorio_id: r.territorio_id,
+    incaricato_id: r.incaricato_id,
+    anno: r.anno,
+    ordine_originale: r.ordine,
+    note: r.note,
+    archiviato_da: user?.id,
+    comune_nome: t?.comune,
+    provincia_nome: t?.provincia,
+    regione_nome: t?.regione,
+    cap: t?.cap,
+    popolazione: t?.popolazione,
+    numero_piva: t?.numero_piva,
+  });
+  await sb.from('programma').delete().eq('id', id);
+  toast('Archiviato', 'success');
+  await loadProgramma();
+}
+
+function populateAnniSelect(selId, withAll=false) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const curr = new Date().getFullYear();
+  const years = [curr-2, curr-1, curr, curr+1, curr+2];
+  sel.innerHTML = withAll ? '<option value="">Tutti gli anni</option>' : '';
+  years.forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === curr) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function populateIncaricatiSelect(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const curr = sel.value;
+  sel.innerHTML = '<option value="">Tutti gli incaricati</option>';
+  allP.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = `${p.nome||''} ${p.cognome||''}`.trim();
+    sel.appendChild(o);
+  });
+  sel.value = curr;
+}
+
+function populateComuniSelect(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Seleziona comune...</option>';
+  [...allT].sort((a,b)=>a.comune.localeCompare(b.comune)).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = `${t.comune} (${t.provincia})`;
+    sel.appendChild(o);
+  });
+}
+
+function openModalAddComune() {
+  populateAnniSelect('acAnno');
+  populateIncaricatiSelect('acIncaricato');
+  populateComuniSelect('acComune');
+  document.getElementById('acNote').value = '';
+  document.getElementById('mAddComune').classList.add('on');
+}
+
+async function salvaAddComune() {
+  const anno = parseInt(document.getElementById('acAnno').value);
+  const incId = document.getElementById('acIncaricato').value;
+  const terrId = document.getElementById('acComune').value;
+  const stato = document.getElementById('acStato').value;
+  const note = document.getElementById('acNote').value.trim();
+  if (!terrId || !incId) { toast('Seleziona incaricato e comune', 'error'); return; }
+
+  // Calcola prossimo ordine
+  const { data: existing } = await sb.from('programma').select('ordine').eq('anno', anno).eq('incaricato_id', incId).order('ordine', {ascending:false}).limit(1);
+  const nextOrdine = existing?.length ? (existing[0].ordine + 1) : 1;
+
+  const { error } = await sb.from('programma').insert({ territorio_id: terrId, incaricato_id: incId, anno, ordine: nextOrdine, stato, note: note||null });
+  if (error) { toast('Errore: '+error.message, 'error'); return; }
+  toast('Comune aggiunto al programma', 'success');
+  closeM('mAddComune');
+  await loadProgramma();
+}
+
+function addAnno() {
+  const sel = document.getElementById('prAnno');
+  const curr = parseInt(sel.value) || new Date().getFullYear();
+  const opt = document.createElement('option');
+  opt.value = curr + 1; opt.textContent = curr + 1;
+  sel.appendChild(opt);
+  sel.value = curr + 1;
+  loadProgramma();
+}
+
+// ─── ARCHIVIO ─────────────────────────────────────────
+async function loadArchivio() {
+  const anno = document.getElementById('archAnno').value;
+  const incId = document.getElementById('archIncaricato').value;
+  const q2 = document.getElementById('archSearch').value.toLowerCase();
+
+  let q = sb.from('archivio').select('*, profili!archivio_incaricato_id_fkey(nome,cognome)').order('anno', {ascending:false}).order('ordine_originale');
+  if (anno) q = q.eq('anno', parseInt(anno));
+  if (incId) q = q.eq('incaricato_id', incId);
+  const { data } = await q;
+
+  const filtered = (data||[]).filter(r => !q2 || (r.comune_nome||'').toLowerCase().includes(q2) || (r.provincia_nome||'').toLowerCase().includes(q2));
+  const body = document.getElementById('archivioBody');
+
+  if (!filtered.length) { body.innerHTML = '<div class="empty">Nessun comune in archivio.</div>'; return; }
+
+  // Raggruppa per anno
+  const byAnno = {};
+  filtered.forEach(r => {
+    if (!byAnno[r.anno]) byAnno[r.anno] = [];
+    byAnno[r.anno].push(r);
+  });
+
+  body.innerHTML = Object.entries(byAnno).sort(([a],[b])=>b-a).map(([anno, items]) => `
+    <div class="arch-year-block">
+      <div class="arch-year-hdr" onclick="toggleBlk(this)">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+        <span class="arch-year-lbl">Edizione ${anno}</span>
+        <span class="arch-year-cnt">${items.length} comuni</span>
+      </div>
+      <div class="arch-year-body">
+        <div class="card" style="margin:0 0 4px 0">
+          <div class="ts">
+            <table class="tbl">
+              <thead><tr><th>#</th><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Popolazione</th><th>P.IVA</th><th>Incaricato</th><th></th></tr></thead>
+              <tbody>
+                ${items.map(r => {
+                  const nome = r.profili ? `${r.profili.nome||''} ${r.profili.cognome||''}`.trim() : '—';
+                  return `<tr>
+                    <td style="color:var(--tx3)">${r.ordine_originale||'—'}</td>
+                    <td><strong>${r.comune_nome||'—'}</strong></td>
+                    <td>${r.provincia_nome||'—'}</td>
+                    <td>${r.regione_nome||'—'}</td>
+                    <td>${r.cap||'—'}</td>
+                    <td>${r.popolazione?r.popolazione.toLocaleString('it-IT'):'—'}</td>
+                    <td>${r.numero_piva||'—'}</td>
+                    <td>${nome}</td>
+                    <td>
+                      <button class="btn btns" style="font-size:10px;padding:3px 8px;white-space:nowrap" onclick="ripristina('${r.id}')">↩ Ripristina</button>
+                    </td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function ripristina(archId) {
+  if (!confirm('Ripristinare questo comune nel programma attivo?')) return;
+  const { data: r } = await sb.from('archivio').select('*').eq('id', archId).single();
+  if (!r) return;
+  const anno = new Date().getFullYear();
+  const { data: ex } = await sb.from('programma').select('ordine').eq('anno', anno).eq('incaricato_id', r.incaricato_id).order('ordine',{ascending:false}).limit(1);
+  const nextOrd = ex?.length ? ex[0].ordine+1 : 1;
+  await sb.from('programma').insert({ territorio_id: r.territorio_id, incaricato_id: r.incaricato_id, anno, ordine: nextOrd, stato:'pianificato', note: r.note });
+  await sb.from('archivio').delete().eq('id', archId);
+  toast('Comune ripristinato nel programma '+anno, 'success');
+  await loadArchivio();
+}
 
 (async()=>{const{data:{session}}=await sb.auth.getSession();if(session)await init(session.user);})();
 </script>
