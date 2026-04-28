@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WelfareCare — Calendario Eventi</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --wc:#26ADE4;--wcd:#1a8fc2;--wcl:#e8f6fc;
+  --bg:#f0f4f8;--sur:#fff;--sur2:#f7f9fb;
+  --bd:rgba(0,0,0,.07);--bd2:rgba(0,0,0,.12);
+  --tx:#0d1117;--tx2:#4a5568;--tx3:#94a3b8;
+  --f:'Poppins',sans-serif;--r:10px;--rl:16px;
+  --c-mammo:#26ADE4;--c-prostata:#8b5cf6;--c-nevi:#10b981;
+  --c-tiroide:#f59e0b;--c-cuore:#ef4444;--c-misto:#6366f1;--c-altro:#94a3b8;
+}
+body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column}
+
+/* TOPBAR */
+.topbar{height:56px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 24px;gap:14px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.tb-back{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx3);cursor:pointer;padding:6px 10px;border-radius:var(--r);transition:background .15s;text-decoration:none;border:none;background:none;font-family:var(--f)}
+.tb-back:hover{background:var(--sur2);color:var(--tx2)}
+.tb-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.tb-div{width:1px;height:22px;background:var(--bd2);flex-shrink:0}
+.tb-logo img{height:22px;display:block}
+.tb-title{font-size:13px;font-weight:600;color:var(--tx)}
+.tb-sp{flex:1}
+.tb-actions{display:flex;gap:8px;align-items:center}
+.btn{font-family:var(--f);font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx);transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn:hover{background:var(--sur2)}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.btnp{background:var(--wc);color:#fff;border-color:var(--wc)}
+.btnp:hover{background:var(--wcd)}
+.btng{background:#059669;color:#fff;border-color:#059669}
+.btng:hover{background:#047857}
+
+/* MAIN */
+.main{flex:1;padding:24px;max-width:1300px;margin:0 auto;width:100%}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.toolbar-sp{flex:1}
+.fi{font-family:var(--f);font-size:12px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--wc)}
+.fs{font-family:var(--f);font-size:12px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);outline:none}
+.view-toggle{display:flex;border:1px solid var(--bd2);border-radius:var(--r);overflow:hidden}
+.vt{padding:7px 13px;font-size:11px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--tx3);font-family:var(--f);display:flex;align-items:center;gap:5px;transition:all .15s}
+.vt.on{background:var(--wc);color:#fff}
+.vt:not(.on):hover{background:var(--sur2);color:var(--tx)}
+.vt svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:14px 16px}
+.stat-label{font-size:10px;font-weight:500;color:var(--tx3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.stat-value{font-size:22px;font-weight:600;color:var(--tx);line-height:1}
+.stat-sub{font-size:10px;color:var(--tx3);margin-top:3px}
+
+/* LISTA VIEW */
+.card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.ch{padding:12px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ct{font-size:13px;font-weight:600;color:var(--tx)}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{padding:9px 14px;text-align:left;font-weight:500;font-size:10px;color:var(--tx3);background:var(--sur2);border-bottom:1px solid var(--bd);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.tbl td{padding:9px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--sur2)}
+.tbl tr.clickable{cursor:pointer}
+
+/* CALENDARIO MENSILE */
+.cal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.month-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden}
+.month-header{padding:12px 16px;background:var(--wc);color:#fff;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.month-count{background:rgba(255,255,255,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600}
+.month-body{padding:8px 0}
+.event-row{display:flex;align-items:flex-start;gap:10px;padding:8px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .12s}
+.event-row:last-child{border-bottom:none}
+.event-row:hover{background:var(--sur2)}
+.event-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.event-info{flex:1;min-width:0}
+.event-comune{font-size:11px;font-weight:500;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.event-meta{font-size:10px;color:var(--tx3);margin-top:1px}
+.event-date{font-size:10px;font-weight:600;color:var(--tx3);flex-shrink:0;min-width:36px}
+
+/* TIPO BADGES */
+.tbadge{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.t-mammo{background:#e8f6fc;color:#1a8fc2}
+.t-prostata{background:#ede9fe;color:#6d28d9}
+.t-nevi{background:#d1fae5;color:#065f46}
+.t-tiroide{background:#fef3c7;color:#92400e}
+.t-cuore{background:#fee2e2;color:#991b1b}
+.t-misto{background:#e0e7ff;color:#3730a3}
+.t-altro{background:var(--sur2);color:var(--tx3)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:var(--sur);border-radius:var(--rl);width:600px;max-width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--bd);box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.mh{padding:18px 22px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:1}
+.mt{font-size:14px;font-weight:600;color:var(--tx)}
+.mc{background:none;border:none;font-size:20px;color:var(--tx3);cursor:pointer;padding:2px 8px;border-radius:var(--r);line-height:1}
+.mc:hover{background:var(--sur2)}
+.mb{padding:22px}
+.mf{padding:14px 22px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--sur)}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fl{font-size:11px;font-weight:500;color:var(--tx2)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid .full{grid-column:1/-1}
+.sep{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:14px;margin-top:4px}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.toast.success{background:#059669}.toast.error{background:#dc2626}
+
+/* PRINT */
+@media print{
+  .topbar,.toolbar,.tb-actions,.stats-row{display:none!important}
+  body{background:#fff}
+  .modal-bg{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a class="tb-back" href="/">
+    <svg viewBox="0 0 16 16"><path d="M10 12L6 8l4-4"/></svg>
+    Portale
+  </a>
+  <div class="tb-div"></div>
+  <div class="tb-title">📅 Calendario Eventi 2026</div>
+  <div class="tb-sp"></div>
+  <div class="tb-actions">
+    <button class="btn" onclick="exportPDF()">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+      Esporta PDF
+    </button>
+    <button class="btn btnp" onclick="openModalNuovo()">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo evento
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainContent">
+
+  <!-- STATS -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-label">Totale eventi</div><div class="stat-value" id="statTot">—</div><div class="stat-sub">anno in corso</div></div>
+    <div class="stat-card"><div class="stat-label">Mese corrente</div><div class="stat-value" id="statMese">—</div><div class="stat-sub" id="statMeseLabel">—</div></div>
+    <div class="stat-card"><div class="stat-label">Incaricati</div><div class="stat-value" id="statInc">—</div><div class="stat-sub">coinvolti</div></div>
+    <div class="stat-card"><div class="stat-label">Prossimo evento</div><div class="stat-value" id="statPross" style="font-size:13px;line-height:1.3">—</div><div class="stat-sub" id="statProssData">—</div></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <input class="fi" style="width:200px" placeholder="Cerca comune, incaricato..." id="searchInput" oninput="renderView()"/>
+    <select class="fs" id="filterMese" onchange="renderView()">
+      <option value="">Tutti i mesi</option>
+      <option value="dicembre">Dicembre</option>
+      <option value="gennaio">Gennaio</option>
+      <option value="febbraio">Febbraio</option>
+      <option value="marzo">Marzo</option>
+      <option value="aprile">Aprile</option>
+      <option value="maggio">Maggio</option>
+      <option value="giugno">Giugno</option>
+      <option value="luglio">Luglio</option>
+    </select>
+    <select class="fs" id="filterTipo" onchange="renderView()">
+      <option value="">Tutti i tipi</option>
+      <option value="mammo">Mammo + Eco</option>
+      <option value="prostata">Prostata</option>
+      <option value="nevi">Mappatura Nevi</option>
+      <option value="tiroide">Tiroide</option>
+      <option value="misto">Misto</option>
+    </select>
+    <select class="fs" id="filterInc" onchange="renderView()">
+      <option value="">Tutti gli incaricati</option>
+    </select>
+    <div class="toolbar-sp"></div>
+    <div class="view-toggle">
+      <button class="vt on" id="vLista" onclick="setView('lista')">
+        <svg viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12"/></svg>Lista
+      </button>
+      <button class="vt" id="vMesi" onclick="setView('mesi')">
+        <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Per mese
+      </button>
+    </div>
+  </div>
+
+  <!-- LISTA VIEW -->
+  <div id="viewLista">
+    <div class="card">
+      <div class="ch">
+        <span class="ct" id="listaTitle">Tutti gli eventi</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Comune / Evento</th>
+              <th>Incaricato</th>
+              <th>Tipologia</th>
+              <th>Location</th>
+              <th>Slot</th>
+              <th>Partner</th>
+              <th>Note</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="listaBody">
+            <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--tx3)">Caricamento...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MESI VIEW -->
+  <div id="viewMesi" style="display:none">
+    <div class="cal-grid" id="mesiBody"></div>
+  </div>
+
+</div>
+
+<!-- MODAL EVENTO -->
+<div class="modal-bg" id="modalEvento">
+  <div class="modal">
+    <div class="mh">
+      <div class="mt" id="modalTitolo">Nuovo evento</div>
+      <button class="mc" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mb">
+      <div class="sep">Dati principali</div>
+      <div class="fgrid">
+        <div class="fg full"><div class="fl">Comune / Evento *</div><input class="fi" id="eComune" placeholder="Es. CASTELFRANCO VENETO (TV)"/></div>
+        <div class="fg"><div class="fl">Data</div><input class="fi" id="eData" type="date"/></div>
+        <div class="fg"><div class="fl">Mese</div>
+          <select class="fs" id="eMese" style="width:100%">
+            <option value="dicembre">Dicembre</option>
+            <option value="gennaio">Gennaio</option>
+            <option value="febbraio">Febbraio</option>
+            <option value="marzo">Marzo</option>
+            <option value="aprile">Aprile</option>
+            <option value="maggio">Maggio</option>
+            <option value="giugno">Giugno</option>
+            <option value="luglio">Luglio</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fl">Incaricato</div><input class="fi" id="eIncaricato" placeholder="Es. Filippo Monis"/></div>
+        <div class="fg"><div class="fl">Tipologia evento</div>
+          <select class="fs" id="eTipo" style="width:100%">
+            <option value="Mammo + Eco">Mammo + Eco</option>
+            <option value="M+E / Prostata">M+E / Prostata</option>
+            <option value="Prostata">Prostata</option>
+            <option value="Mappatura Nevi">Mappatura Nevi</option>
+            <option value="Tiroide">Tiroide</option>
+            <option value="Tiroide/nevi">Tiroide + Nevi</option>
+            <option value="Malattie Cardiovascolari">Malattie Cardiovascolari</option>
+            <option value="Altro">Altro</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fl">Range d'età</div><input class="fi" id="eEta" placeholder="Es. 35-49"/></div>
+      </div>
+      <div class="sep">Logistica</div>
+      <div class="fgrid">
+        <div class="fg full"><div class="fl">Location</div><input class="fi" id="eLocation" placeholder="Es. Piazza della Repubblica"/></div>
+        <div class="fg"><div class="fl">Numero slot / posti</div><input class="fi" id="eSlot" placeholder="Es. 45 posti"/></div>
+        <div class="fg"><div class="fl">Partner sanitario</div><input class="fi" id="ePartner" placeholder="Es. RED CARE"/></div>
+        <div class="fg full"><div class="fl">Note</div><textarea class="fi" id="eNote" rows="3" placeholder="Note aggiuntive, avvisi, istruzioni speciali..."></textarea></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal()" style="color:var(--tx3)">Annulla</button>
+      <button class="btn btng" onclick="salvaEvento()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
+        Salva evento
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATI ──────────────────────────────────────────────
+const EVENTI_INIZIALI = [{"data":"2025-12-02","mese":"dicembre","comune":"CORDENONS (PN - FVG)","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-45","location":"Piazza della Vittoria","slot":"","partner":"","note":""},{"data":"2025-12-03","mese":"dicembre","comune":"Marano Vicentino (VI - Veneto)","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Silva","slot":"45 posti","partner":"","note":""},{"data":"2025-12-04","mese":"dicembre","comune":"MUSILE di PIAVE (VE - Veneto)","incaricato":"Filippo Monis","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"Parcheggio supermercato Maxi via Marconi, 41","slot":"16 posti mix","partner":"RED CARE","note":""},{"data":"2025-12-05","mese":"dicembre","comune":"MOTTA DI LIVENZA (TV Veneto)","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza San Rocco","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2025-12-06","mese":"dicembre","comune":"CONEGLIANO (TV - Veneto)","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazzale San Martino (sotto i cipressi)","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2025-12-10","mese":"dicembre","comune":"MAZZUCCHELLI aziendale","incaricato":"Massimo Bello","tipo":"Mammo + Eco","range_eta":"Aziendale","location":"","slot":"","partner":"","note":""},{"data":"2025-12-12","mese":"dicembre","comune":"PORTO MANTOVANO (MN - Veneto)","incaricato":"Alessandro Zanoio","tipo":"Mammo + Eco","range_eta":"35-45","location":"piazza dei Marinai","slot":"45 posti","partner":"","note":""},{"data":"2025-12-14","mese":"dicembre","comune":"ARZERGRANDE PD - Veneto","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"piazza don luigi segala","slot":"45 posti","partner":"RED CARE","note":"3 posti per PANIZZOLO"},{"data":"2025-12-16","mese":"dicembre","comune":"ANAGNI (FR - Lazio)","incaricato":"Davide Bottoni","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Giovanni Paolo II adicente il Palazzo Comunale","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2025-12-17","mese":"dicembre","comune":"CIAMPINO Roma - Lazio","incaricato":"Troiani","tipo":"Mammo + Eco","range_eta":"35-49","location":"Largo Felice Armati","slot":"45 posti","partner":"","note":"ORARI EVENTO: 08.00 - 12.00 pausa 12.10 - 13.30 13.30 - 16.40"},{"data":"2026-01-30","mese":"gennaio","comune":"SALGAREDA","incaricato":"Diego Favaro","tipo":"Mammo + Eco","range_eta":"35-49","location":"Centro Sociale Carlo Alberto Dalla Chiesa","slot":"45 posti","partner":"RED CARE","note":"5 posti agente"},{"data":"2 e 3 febbraio 2026 + 11 febbraio","mese":"febbraio","comune":"ECG + Eco cuore Aziendale FOREL (TV - Veneto)","incaricato":"Simonetta Duregon","tipo":"Malattie Cardiovascolari","range_eta":"da definire","location":"Via per Monastier, 4, 31056 Vallio (TV)","slot":"40 posti","partner":"RED CARE","note":"orario inizio esami 08.30"},{"data":"2026-02-04","mese":"febbraio","comune":"La Gardère Retail Mammo + Eco evento aziendale (VE - Veneto)","incaricato":"massimo Bello","tipo":"Mammo + Eco","range_eta":"Aziendale","location":"Parcheggio Sosta Breve (Viale Galileo Galilei)","slot":"","partner":"RED CARE","note":""},{"data":"2026-02-05","mese":"febbraio","comune":"PORTO VIRO (M+E /Prostata) RO - Veneto","incaricato":"Giancarla Modugno","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"Piazza della Repubblica","slot":"25 posti M+E e 20 Prostata","partner":"RED CARE","note":""},{"data":"2026-03-07","mese":"marzo","comune":"SEREGNO Mappatura nevi MB - Lombardia","incaricato":"Paolo Perego","tipo":"Mappatura Nevi","range_eta":"0-100 minori accomp.","location":"Piazza Risorgimento","slot":"50 posti","partner":"RED CARE","note":"3 posti per Gerosa al mattino"},{"data":"2026-03-08","mese":"marzo","comune":"NOVA MILANESE (M+E) MB - LOMBARDIA","incaricato":"Paolo Perego","tipo":"Mammo + Eco","range_eta":"35-45","location":"Via Roma","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-13","mese":"marzo","comune":"ARCOLE M + E (VR - Veneto)","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Europa","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-14","mese":"marzo","comune":"CERVARESE S.CROCE SACCOLONGO E TEOLO","incaricato":"Giancarla Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Aldo Moro, fronte Municipio","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-15","mese":"marzo","comune":"VIGONZA M+E PD - Veneto","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Zanella","slot":"45 posti","partner":"RED CARE","note":"RISERVARE 5 POSTI AL COMUNE PER I MEDICI DI BASE"},{"data":"2026-03-18","mese":"marzo","comune":"Domus Line evento aziendale M+E Porcia - PN - FVG","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"Aziendale","location":"","slot":"da definire","partner":"SANISYSTEM","note":"dalle ore 08.00 alle 18.00"},{"data":"2026-03-23","mese":"marzo","comune":"ARCUGNANO M+E VI - Veneto","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Mariano Rumor","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-25","mese":"marzo","comune":"ISOLA VICENTINA (M+E) VI - Veneto","incaricato":"Giancarla Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Marconi","slot":"45 posti","partner":"RED CARE","note":""},{"data":"26 e 27 marzo","mese":"marzo","comune":"SCHIO M+E Vi - Veneto","incaricato":"Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Falcone e Borsellino","slot":"45 posti","partner":"RED CARE","note":"7 posti + 8 posti"},{"data":"28 e 29 marzo","mese":"marzo","comune":"MONTEBELLUNA M + E (TV - Veneto)","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"presso Cantina Montelliana","slot":"45 posti a giornata","partner":"RED CARE","note":"2 posti per AmaCrai + 5 posti"},{"data":"2026-03-30","mese":"marzo","comune":"NOVENTA DI PIAVE M+E (VE - Veneto)","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Guglielmo Marconi","slot":"45 posti","partner":"RED CARE","note":"5 x Simonetta 1 posto per Katia Donato ore 11.00"},{"data":"2026-03-31","mese":"marzo","comune":"NOVENTA DI PIAVE Prostata (VE - Veneto)","incaricato":"Simonetta Duregon","tipo":"Prostata","range_eta":"dai 40 anni","location":"Piazza Guglielmo Marconi","slot":"40 posti","partner":"RED CARE","note":"5 x Simonetta"},{"data":"2026-04-02","mese":"aprile","comune":"BVR Aziendale M+E/Prostata","incaricato":"Direzione","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"25 donne/20 uomini","partner":"RED CARE","note":""},{"data":"2026-04-13","mese":"aprile","comune":"IBL Mappatura Nevi evento aziendale Roma - Lazio","incaricato":"massimo bello","tipo":"Mappatura Nevi","range_eta":"","location":"Roma venti Settembre","slot":"50 posti","partner":"","note":""},{"data":"2026-04-14","mese":"aprile","comune":"IVECO EV.AZIENDALE TIROIDE TORINO","incaricato":"Massimo Bello","tipo":"Tiroide","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"15 e 16 aprile","mese":"aprile","comune":"IVECO EV.AZIENDALE TIROIDE PIACENZA","incaricato":"Massimo Bello","tipo":"Tiroide","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"14 - 15 - 16 aprile","mese":"aprile","comune":"IFIS KALEIDOS Mappatura nevi FI - Toscana","incaricato":"massimo bello","tipo":"Mappatura Nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"20 - 21 - 22 aprile","mese":"aprile","comune":"NOVATION TECH Evento aziendale Tiroide + Nevi","incaricato":"massimo Bello","tipo":"Tiroide/nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"2026-05-02","mese":"maggio","comune":"COLOGNA VENETA M + E VR - Veneto","incaricato":"antonio manzi","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"","note":""},{"data":"4 - 5 - 6 maggio","mese":"maggio","comune":"IVECO Tiroide Bolzano BZ","incaricato":"Massimo Bello","tipo":"Tiroide","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"2026-05-07","mese":"maggio","comune":"BVR Aziendale M+E/Prostata","incaricato":"Massimo Bello","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-09","mese":"maggio","comune":"PONTE SAN NICOLO' Prostata (PD - Veneto)","incaricato":"Giancarla Modugno","tipo":"Prostata","range_eta":"dai 40 anni","location":"","slot":"","partner":"","note":""},{"data":"2026-05-10","mese":"maggio","comune":"NEGRAR DI VALPOLICELLA (M+E) VR - Veneto","incaricato":"Alessandro Zanoio","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-13","mese":"maggio","comune":"PORCIA M + E PN - FVG","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-45","location":"","slot":"","partner":"RED CARE","note":""},{"data":"14 e 15 maggio","mese":"maggio","comune":"CIMOLAI evento aziendale Mappatura nevi","incaricato":"Simonetta Duregon","tipo":"Mappatura Nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"2025-05-16","mese":"maggio","comune":"BRUGNERA M + E PN - FVG","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-45","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-18","mese":"maggio","comune":"ISOLA VICENTINA (M+E) VI - Veneto","incaricato":"Giancarla Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-19","mese":"maggio","comune":"VALDO evento aziendale m+e/prostata","incaricato":"filippo monis","tipo":"M+E / Prostata","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"20 e 21 maggio 2026","mese":"maggio","comune":"IFIS KALEIDOS mappatura nevi CN - Piemonte","incaricato":"","tipo":"Mappatura Nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"23 - 24 - 25 maggio","mese":"maggio","comune":"CASTELFRANCO VENETO (M + E)","incaricato":"massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"45 posti a giornata","partner":"RED CARE","note":"Corsa in Rosa il 24"},{"data":"2026-05-26","mese":"maggio","comune":"MASSANZAGO m+e/prostata PD - Veneto","incaricato":"Simonetta Duregon","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"","partner":"","note":""},{"data":"2026-05-27","mese":"maggio","comune":"SOMMACAMPAGNA","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"","note":""},{"data":"2026-05-28","mese":"maggio","comune":"GRASSOBBIO (M+E)","incaricato":"Paolo Perego","tipo":"Mammo + Eco","range_eta":"35-45","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-29","mese":"maggio","comune":"GRASSOBBIO Mappatura Nevi","incaricato":"Paolo Perego","tipo":"Mappatura Nevi","range_eta":"0-100 minori accomp.","location":"","slot":"50 posti","partner":"RED CARE","note":""},{"data":"2026-05-30","mese":"maggio","comune":"PIOVENE ROCCHETTE","incaricato":"Simonetta Duregon","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"","partner":"","note":""}];
+
+let eventi = JSON.parse(localStorage.getItem('wc_eventi') || 'null') || EVENTI_INIZIALI;
+let currentView = 'lista';
+let editIdx = null;
+
+// ── INIT ──────────────────────────────────────────────
+function init() {
+  renderStats();
+  renderIncaricatiFilter();
+  renderView();
+}
+
+function saveEventi() {
+  localStorage.setItem('wc_eventi', JSON.stringify(eventi));
+}
+
+// ── STATS ─────────────────────────────────────────────
+function renderStats() {
+  const mesiOrdine = ['dicembre','gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre'];
+  const oggi = new Date();
+  const meseCorrente = mesiOrdine[oggi.getMonth() === 11 ? 0 : oggi.getMonth()];
+  const evMese = eventi.filter(e => e.mese === meseCorrente);
+  const incaricati = new Set(eventi.map(e => e.incaricato).filter(Boolean));
+  
+  // Prossimo evento
+  const futuri = eventi.filter(e => {
+    if (!e.data || e.data.length < 8) return false;
+    try { return new Date(e.data) >= oggi; } catch { return false; }
+  }).sort((a,b) => new Date(a.data) - new Date(b.data));
+
+  document.getElementById('statTot').textContent = eventi.length;
+  document.getElementById('statMese').textContent = evMese.length;
+  document.getElementById('statMeseLabel').textContent = meseCorrente;
+  document.getElementById('statInc').textContent = incaricati.size;
+  if (futuri.length) {
+    document.getElementById('statPross').textContent = futuri[0].comune.split(' ').slice(0,3).join(' ');
+    document.getElementById('statProssData').textContent = futuri[0].data;
+  } else {
+    document.getElementById('statPross').textContent = '—';
+    document.getElementById('statProssData').textContent = '';
+  }
+}
+
+function renderIncaricatiFilter() {
+  const sel = document.getElementById('filterInc');
+  const curr = sel.value;
+  sel.innerHTML = '<option value="">Tutti gli incaricati</option>';
+  const uniq = [...new Set(eventi.map(e => e.incaricato).filter(Boolean))].sort();
+  uniq.forEach(i => {
+    const o = document.createElement('option'); o.value=i; o.textContent=i; sel.appendChild(o);
+  });
+  sel.value = curr;
+}
+
+// ── FILTER ────────────────────────────────────────────
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const mese = document.getElementById('filterMese').value;
+  const tipo = document.getElementById('filterTipo').value;
+  const inc = document.getElementById('filterInc').value;
+  return eventi.filter(e => {
+    if (mese && e.mese !== mese) return false;
+    if (inc && e.incaricato !== inc) return false;
+    if (tipo) {
+      const t = (e.tipo||'').toLowerCase();
+      if (tipo === 'mammo' && !t.includes('mammo') && !t.includes('m+e') && !t.includes('eco')) return false;
+      if (tipo === 'prostata' && !t.includes('prostata')) return false;
+      if (tipo === 'nevi' && !t.includes('nevi')) return false;
+      if (tipo === 'tiroide' && !t.includes('tiroide')) return false;
+      if (tipo === 'misto' && !t.includes('misto') && !t.includes('/')) return false;
+    }
+    if (q && !e.comune.toLowerCase().includes(q) && !e.incaricato.toLowerCase().includes(q) && !e.location.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+// ── VIEWS ─────────────────────────────────────────────
+function setView(v) {
+  currentView = v;
+  document.getElementById('vLista').classList.toggle('on', v==='lista');
+  document.getElementById('vMesi').classList.toggle('on', v==='mesi');
+  document.getElementById('viewLista').style.display = v==='lista' ? '' : 'none';
+  document.getElementById('viewMesi').style.display = v==='mesi' ? '' : 'none';
+  renderView();
+}
+
+function renderView() {
+  if (currentView === 'lista') renderLista();
+  else renderMesi();
+}
+
+function renderLista() {
+  const data = getFiltered();
+  document.getElementById('listaTitle').textContent = `Eventi (${data.length})`;
+  const tbody = document.getElementById('listaBody');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--tx3)">Nessun evento trovato</td></tr>'; return; }
+  tbody.innerHTML = data.map((e,i) => {
+    const idx = eventi.indexOf(e);
+    return `<tr class="clickable" onclick="openModalModifica(${idx})">
+      <td style="font-weight:500;white-space:nowrap;color:var(--tx2)">${e.data||'—'}</td>
+      <td><strong>${e.comune}</strong></td>
+      <td style="color:var(--tx2)">${e.incaricato||'—'}</td>
+      <td>${tipoBadge(e.tipo)}</td>
+      <td style="color:var(--tx3);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.location||'—'}</td>
+      <td style="color:var(--tx3);font-size:11px">${e.slot||'—'}</td>
+      <td style="color:var(--tx3);font-size:11px">${e.partner||'—'}</td>
+      <td style="color:var(--tx3);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'—'}</td>
+      <td>
+        <button class="btn" style="font-size:10px;padding:3px 8px;color:#dc2626;border-color:transparent" onclick="event.stopPropagation();eliminaEvento(${idx})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMesi() {
+  const data = getFiltered();
+  const mesiOrdine = ['dicembre','gennaio','febbraio','marzo','aprile','maggio','giugno','luglio'];
+  const byMese = {};
+  mesiOrdine.forEach(m => { byMese[m] = []; });
+  data.forEach(e => { if (byMese[e.mese]) byMese[e.mese].push(e); });
+  
+  document.getElementById('mesiBody').innerHTML = mesiOrdine
+    .filter(m => byMese[m].length > 0)
+    .map(m => `
+      <div class="month-card">
+        <div class="month-header">
+          <span style="text-transform:capitalize">${m}</span>
+          <span class="month-count">${byMese[m].length}</span>
+        </div>
+        <div class="month-body">
+          ${byMese[m].map(e => {
+            const idx = eventi.indexOf(e);
+            const day = e.data && e.data.length === 10 ? e.data.slice(8) : '';
+            return `<div class="event-row" onclick="openModalModifica(${idx})">
+              <span class="event-date">${day}</span>
+              <div class="event-dot" style="background:${tipoColor(e.tipo)}"></div>
+              <div class="event-info">
+                <div class="event-comune">${e.comune}</div>
+                <div class="event-meta">${e.incaricato||''}${e.incaricato && e.tipo ? ' · ' : ''}${e.tipo||''}</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+}
+
+// ── TIPO HELPERS ──────────────────────────────────────
+function tipoColor(tipo) {
+  const t = (tipo||'').toLowerCase();
+  if (t.includes('nevi')) return '#10b981';
+  if (t.includes('tiroide') && t.includes('nevi')) return '#6366f1';
+  if (t.includes('tiroide')) return '#f59e0b';
+  if (t.includes('cardiov') || t.includes('cuore') || t.includes('ecg')) return '#ef4444';
+  if (t.includes('prostata') && (t.includes('mammo') || t.includes('m+e') || t.includes('eco'))) return '#6366f1';
+  if (t.includes('prostata')) return '#8b5cf6';
+  return '#26ADE4';
+}
+
+function tipoBadge(tipo) {
+  const t = (tipo||'').toLowerCase();
+  let cls = 't-altro', label = tipo||'—';
+  if (t.includes('nevi')) cls = 't-nevi';
+  else if (t.includes('tiroide') && t.includes('nevi')) cls = 't-misto';
+  else if (t.includes('tiroide')) cls = 't-tiroide';
+  else if (t.includes('cardiov') || t.includes('cuore') || t.includes('ecg')) cls = 't-cuore';
+  else if (t.includes('prostata') && (t.includes('mammo') || t.includes('m+e') || t.includes('eco'))) cls = 't-misto';
+  else if (t.includes('prostata')) cls = 't-prostata';
+  else if (t.includes('mammo') || t.includes('m+e') || t.includes('eco')) cls = 't-mammo';
+  return `<span class="tbadge ${cls}">${label}</span>`;
+}
+
+// ── MODAL ─────────────────────────────────────────────
+function openModalNuovo() {
+  editIdx = null;
+  document.getElementById('modalTitolo').textContent = 'Nuovo evento';
+  ['eComune','eData','eIncaricato','eEta','eLocation','eSlot','ePartner','eNote'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('eTipo').value = 'Mammo + Eco';
+  document.getElementById('eMese').value = 'maggio';
+  document.getElementById('modalEvento').classList.add('on');
+}
+
+function openModalModifica(idx) {
+  editIdx = idx;
+  const e = eventi[idx];
+  document.getElementById('modalTitolo').textContent = 'Modifica evento';
+  document.getElementById('eComune').value = e.comune||'';
+  document.getElementById('eData').value = e.data && e.data.length === 10 ? e.data : '';
+  document.getElementById('eMese').value = e.mese||'maggio';
+  document.getElementById('eIncaricato').value = e.incaricato||'';
+  document.getElementById('eTipo').value = e.tipo||'Mammo + Eco';
+  document.getElementById('eEta').value = e.range_eta||'';
+  document.getElementById('eLocation').value = e.location||'';
+  document.getElementById('eSlot').value = e.slot||'';
+  document.getElementById('ePartner').value = e.partner||'';
+  document.getElementById('eNote').value = e.note||'';
+  document.getElementById('modalEvento').classList.add('on');
+}
+
+function closeModal() {
+  document.getElementById('modalEvento').classList.remove('on');
+  editIdx = null;
+}
+
+function salvaEvento() {
+  const comune = document.getElementById('eComune').value.trim();
+  if (!comune) { toast('Il comune è obbligatorio','error'); return; }
+  const ev = {
+    data: document.getElementById('eData').value || '',
+    mese: document.getElementById('eMese').value,
+    comune,
+    incaricato: document.getElementById('eIncaricato').value.trim(),
+    tipo: document.getElementById('eTipo').value,
+    range_eta: document.getElementById('eEta').value.trim(),
+    location: document.getElementById('eLocation').value.trim(),
+    slot: document.getElementById('eSlot').value.trim(),
+    partner: document.getElementById('ePartner').value.trim(),
+    note: document.getElementById('eNote').value.trim(),
+  };
+  if (editIdx !== null) {
+    eventi[editIdx] = ev;
+    toast('Evento aggiornato','success');
+  } else {
+    eventi.push(ev);
+    toast('Evento aggiunto','success');
+  }
+  saveEventi();
+  closeModal();
+  renderStats();
+  renderIncaricatiFilter();
+  renderView();
+}
+
+function eliminaEvento(idx) {
+  if (!confirm(`Eliminare "${eventi[idx].comune}"?`)) return;
+  eventi.splice(idx, 1);
+  saveEventi();
+  renderStats();
+  renderIncaricatiFilter();
+  renderView();
+  toast('Evento eliminato','success');
+}
+
+// ── PDF EXPORT ────────────────────────────────────────
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  
+  // Header
+  doc.setFillColor(38, 173, 228);
+  doc.rect(0, 0, 297, 18, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text('WelfareCare — Calendario Eventi 2026', 14, 12);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text(`Esportato il ${new Date().toLocaleDateString('it-IT')}`, 240, 12);
+  
+  // Filtri applicati
+  const mese = document.getElementById('filterMese').value;
+  const inc = document.getElementById('filterInc').value;
+  let subtitle = 'Tutti gli eventi';
+  if (mese) subtitle = `Mese: ${mese}`;
+  if (inc) subtitle += ` · Incaricato: ${inc}`;
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.text(subtitle, 14, 24);
+  
+  // Raggruppa per mese
+  const data = getFiltered();
+  const mesiOrdine = ['dicembre','gennaio','febbraio','marzo','aprile','maggio','giugno','luglio'];
+  const byMese = {};
+  mesiOrdine.forEach(m => { byMese[m] = []; });
+  data.forEach(e => { if (byMese[e.mese]) byMese[e.mese].push(e); });
+
+  let startY = 28;
+  mesiOrdine.filter(m => byMese[m].length > 0).forEach(m => {
+    // Mese header
+    doc.setFillColor(232, 246, 252);
+    doc.setDrawColor(180, 220, 240);
+    doc.setTextColor(26, 143, 194);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    
+    doc.autoTable({
+      startY,
+      head: [[
+        { content: m.toUpperCase(), colSpan: 8, styles: { fillColor:[232,246,252], textColor:[26,143,194], fontStyle:'bold', fontSize:10 } }
+      ]],
+      body: byMese[m].map(e => [
+        e.data||'—',
+        e.comune,
+        e.incaricato||'—',
+        e.tipo||'—',
+        e.range_eta||'—',
+        e.location||'—',
+        e.slot||'—',
+        e.note||'—',
+      ]),
+      columns: [
+        { header:'Data', dataKey:'data' },
+        { header:'Comune / Evento', dataKey:'comune' },
+        { header:'Incaricato', dataKey:'incaricato' },
+        { header:'Tipologia', dataKey:'tipo' },
+        { header:'Range età', dataKey:'eta' },
+        { header:'Location', dataKey:'location' },
+        { header:'Slot', dataKey:'slot' },
+        { header:'Note', dataKey:'note' },
+      ],
+      headStyles:{ fillColor:[38,173,228], textColor:[255,255,255], fontSize:8, fontStyle:'bold', cellPadding:3 },
+      bodyStyles:{ fontSize:7.5, cellPadding:2.5, textColor:[30,30,30] },
+      alternateRowStyles:{ fillColor:[248,251,253] },
+      columnStyles:{
+        0:{cellWidth:22},1:{cellWidth:52},2:{cellWidth:30},3:{cellWidth:28},
+        4:{cellWidth:22},5:{cellWidth:45},6:{cellWidth:20},7:{cellWidth:50},
+      },
+      margin:{left:8, right:8},
+      didDrawPage: (d) => { startY = d.cursor.y + 4; }
+    });
+    startY = doc.lastAutoTable.finalY + 6;
+  });
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i=1; i<=pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150,150,150);
+    doc.text(`WelfareCare — Calendario Eventi 2026 · Pagina ${i} di ${pageCount}`, 14, doc.internal.pageSize.height - 6);
+  }
+
+  doc.save(`WelfareCare_Calendario_2026${mese?'_'+mese:''}.pdf`);
+  toast('PDF esportato','success');
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast '+(type||'');
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.style.display='none', 3000);
+}
+
+document.getElementById('modalEvento').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalEvento')) closeModal();
+});
+
+// ── START ─────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
