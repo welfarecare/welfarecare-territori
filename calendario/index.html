@@ -131,6 +131,35 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;
 .cal-event-chip{border-radius:4px;padding:3px 6px;font-size:10px;font-weight:600;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3;word-break:break-word;transition:opacity .15s;display:block;width:100%}
 .cal-event-chip:hover{opacity:.85}
 .cal-event-multi{border-radius:4px;padding:3px 6px;font-size:10px;font-weight:600;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3;font-style:italic}
+/* DRAWER OPERATIVO */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:400;display:none}
+.drawer-overlay.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:680px;max-width:95vw;background:var(--sur);border-left:1px solid var(--bd);z-index:401;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 32px rgba(0,0,0,.1)}
+.drawer.on{transform:translateX(0)}
+.drawer-head{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0;background:var(--sur)}
+.drawer-title{font-size:14px;font-weight:600;color:var(--tx);line-height:1.3}
+.drawer-sub{font-size:11px;color:var(--tx3);margin-top:3px}
+.drawer-close{background:none;border:none;font-size:20px;color:var(--tx3);cursor:pointer;padding:2px 8px;border-radius:var(--r);line-height:1;flex-shrink:0}
+.drawer-close:hover{background:var(--sur2)}
+.drawer-body{flex:1;overflow-y:auto;padding:0}
+.drawer-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;flex-shrink:0;background:var(--sur)}
+.dsec{padding:16px 20px;border-bottom:1px solid var(--bd)}
+.dsec-title{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.dsec-title span{font-size:14px}
+.drow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
+.drow.full{grid-template-columns:1fr}
+.drow.three{grid-template-columns:1fr 1fr 1fr}
+.df{display:flex;flex-direction:column;gap:4px}
+.dl{font-size:10px;font-weight:500;color:var(--tx3)}
+.di{font-family:var(--f);font-size:12px;padding:7px 10px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none;transition:border-color .15s}
+.di:focus{border-color:var(--wc)}
+.dchk{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bd2);border-radius:var(--r);cursor:pointer;transition:background .12s}
+.dchk:hover{background:var(--sur2)}
+.dchk input{width:14px;height:14px;accent-color:var(--wc);cursor:pointer;flex-shrink:0}
+.dchk label{font-size:12px;color:var(--tx);cursor:pointer;flex:1}
+.dchk.done{background:#eaf3de;border-color:#c0dd97}
+.dchk.done label{color:#3b6d11;text-decoration:line-through}
+.dbadge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
 /* PRINT */
 @media print{
   .topbar,.toolbar,.tb-actions,.stats-row{display:none!important}
@@ -326,6 +355,150 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;
   </div>
 </div>
 
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- DRAWER OPERATIVO -->
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title" id="drawerTitle">—</div>
+      <div class="drawer-sub" id="drawerSub">—</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  
+  <div class="drawer-body" id="drawerBody">
+
+    <!-- SEZIONE: INFO BASE -->
+    <div class="dsec">
+      <div class="dsec-title"><span>📋</span> Dati evento</div>
+      <div class="drow">
+        <div class="df"><div class="dl">Data evento</div><input class="di" type="date" id="op_data"/></div>
+        <div class="df"><div class="dl">Orario apertura prenotazioni</div><input class="di" type="text" id="op_orario" placeholder="Es. H 09:30"/></div>
+      </div>
+      <div class="drow" style="margin-top:10px">
+        <div class="df"><div class="dl">Location</div><input class="di" type="text" id="op_location" placeholder="Es. Piazza della Repubblica"/></div>
+        <div class="df"><div class="dl">Numero slot / posti</div><input class="di" type="text" id="op_slot" placeholder="Es. 45 posti"/></div>
+      </div>
+      <div class="drow full" style="margin-top:10px">
+        <div class="df"><div class="dl">Posti da riservare</div><textarea class="di" id="op_posti" rows="2" placeholder="Es. 5 posti agente, 2 posti Visotto..."></textarea></div>
+      </div>
+      <div class="drow full" style="margin-top:10px">
+        <div class="df"><div class="dl">Note / Altro</div><textarea class="di" id="op_note" rows="2" placeholder="Note operative aggiuntive..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- SEZIONE: PRENOTAZIONI & MEDIA KIT -->
+    <div class="dsec">
+      <div class="dsec-title"><span>📅</span> Prenotazioni & Media Kit</div>
+      <div class="drow">
+        <div class="df"><div class="dl">Data chiusura prenotazioni</div><input class="di" type="date" id="op_chiusura"/></div>
+        <div class="df"><div class="dl">Apertura prenotazioni</div><input class="di" type="date" id="op_apertura"/></div>
+      </div>
+      <div class="drow" style="margin-top:10px">
+        <div class="df"><div class="dl">Invio Media Kit con data</div><input class="di" type="date" id="op_mediakit"/></div>
+        <div class="df"><div class="dl">Intervista comune</div><input class="di" type="text" id="op_intervista" placeholder="Es. Inviata al comune"/></div>
+      </div>
+    </div>
+
+    <!-- SEZIONE: GIORNALE -->
+    <div class="dsec">
+      <div class="dsec-title"><span>📰</span> Uscita sul Giornale</div>
+      <div class="drow">
+        <div class="df"><div class="dl">Nome giornale</div><input class="di" type="text" id="op_giornale" placeholder="Es. Corriere VI"/></div>
+        <div class="df"><div class="dl">Misure</div><input class="di" type="text" id="op_misure" placeholder="Es. singola / doppia"/></div>
+      </div>
+      <div class="drow three" style="margin-top:10px">
+        <div class="df"><div class="dl">Deadline grafica uscita</div><input class="di" type="date" id="op_deadline"/></div>
+        <div class="df"><div class="dl">Quando esce sul giornale</div><input class="di" type="date" id="op_uscita_giornale"/></div>
+        <div class="df"><div class="dl">Invio per la stampa</div><input class="di" type="date" id="op_invio_stampa"/></div>
+      </div>
+      <div class="drow" style="margin-top:10px">
+        <div class="dchk" id="dchk_edicola" onclick="toggleCheck('op_edicola','dchk_edicola')">
+          <input type="checkbox" id="op_edicola"/>
+          <label for="op_edicola">Edicola prenotata</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEZIONE: MATERIALI STAMPA -->
+    <div class="dsec">
+      <div class="dsec-title"><span>🖨️</span> Materiali & Stampa</div>
+      
+      <div style="font-size:10px;font-weight:600;color:var(--tx3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Telone</div>
+      <div class="drow three">
+        <div class="dchk" id="dchk_telone" onclick="toggleCheck('op_telone','dchk_telone')">
+          <input type="checkbox" id="op_telone"/>
+          <label for="op_telone">Telone</label>
+        </div>
+        <div class="df"><div class="dl">Conferma telone</div><input class="di" type="date" id="op_conf_telone"/></div>
+        <div class="df"><div class="dl">Stampa telone</div><input class="di" type="date" id="op_stampa_telone"/></div>
+      </div>
+
+      <div style="font-size:10px;font-weight:600;color:var(--tx3);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.05em">Busta</div>
+      <div class="drow three">
+        <div class="dchk" id="dchk_busta" onclick="toggleCheck('op_busta','dchk_busta')">
+          <input type="checkbox" id="op_busta"/>
+          <label for="op_busta">Busta</label>
+        </div>
+        <div class="df"><div class="dl">Stampa busta</div><input class="di" type="date" id="op_stampa_busta"/></div>
+        <div class="df"><div class="dl">Uscita busta</div><input class="di" type="date" id="op_uscita_busta"/></div>
+      </div>
+      <div class="drow" style="margin-top:8px">
+        <div class="dchk" id="dchk_conf_busta" onclick="toggleCheck('op_conf_busta','dchk_conf_busta')">
+          <input type="checkbox" id="op_conf_busta"/>
+          <label for="op_conf_busta">Conferma uscita busta</label>
+        </div>
+      </div>
+
+      <div style="font-size:10px;font-weight:600;color:var(--tx3);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.05em">Roll-Up</div>
+      <div class="drow three">
+        <div class="dchk" id="dchk_rollup_ev" onclick="toggleCheck('op_rollup_ev','dchk_rollup_ev')">
+          <input type="checkbox" id="op_rollup_ev"/>
+          <label for="op_rollup_ev">Roll-Up EV</label>
+        </div>
+        <div class="dchk" id="dchk_rollup_tp" onclick="toggleCheck('op_rollup_tp','dchk_rollup_tp')">
+          <input type="checkbox" id="op_rollup_tp"/>
+          <label for="op_rollup_tp">Roll-Up TP</label>
+        </div>
+        <div class="df"><div class="dl">Stampa Roll-Up</div><input class="di" type="date" id="op_stampa_rollup"/></div>
+      </div>
+
+      <div style="font-size:10px;font-weight:600;color:var(--tx3);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.05em">Attestati</div>
+      <div class="drow">
+        <div class="dchk" id="dchk_attestati" onclick="toggleCheck('op_attestati','dchk_attestati')">
+          <input type="checkbox" id="op_attestati"/>
+          <label for="op_attestati">Attestati</label>
+        </div>
+        <div class="df"><div class="dl">Stampa attestati</div><input class="di" type="date" id="op_stampa_attestati"/></div>
+      </div>
+
+      <div style="font-size:10px;font-weight:600;color:var(--tx3);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.05em">Giustificativo</div>
+      <div class="drow full">
+        <div class="dchk" id="dchk_giustificativo" onclick="toggleCheck('op_giustificativo','dchk_giustificativo')">
+          <input type="checkbox" id="op_giustificativo"/>
+          <label for="op_giustificativo">Giustificativo completato</label>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end drawer-body -->
+
+  <div class="drawer-foot">
+    <button class="btn" onclick="closeDrawer()" style="color:var(--tx3)">Chiudi</button>
+    <button class="btn" onclick="apriSchedaFinestra()" title="Apri in nuova finestra">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Apri in nuova finestra
+    </button>
+    <div style="flex:1"></div>
+    <button class="btn btng" onclick="salvaOperativo()">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
+      Salva scheda
+    </button>
+  </div>
+</div>
+
 <script>
 // ── DATI ──────────────────────────────────────────────
 const EVENTI_INIZIALI = [{"data":"2025-12-02","mese":"dicembre","comune":"CORDENONS (PN - FVG)","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-45","location":"Piazza della Vittoria","slot":"","partner":"","note":""},{"data":"2025-12-03","mese":"dicembre","comune":"Marano Vicentino (VI - Veneto)","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Silva","slot":"45 posti","partner":"","note":""},{"data":"2025-12-04","mese":"dicembre","comune":"MUSILE di PIAVE (VE - Veneto)","incaricato":"Filippo Monis","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"Parcheggio supermercato Maxi via Marconi, 41","slot":"16 posti mix","partner":"RED CARE","note":""},{"data":"2025-12-05","mese":"dicembre","comune":"MOTTA DI LIVENZA (TV Veneto)","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza San Rocco","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2025-12-06","mese":"dicembre","comune":"CONEGLIANO (TV - Veneto)","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazzale San Martino (sotto i cipressi)","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2025-12-10","mese":"dicembre","comune":"MAZZUCCHELLI aziendale","incaricato":"Massimo Bello","tipo":"Mammo + Eco","range_eta":"Aziendale","location":"","slot":"","partner":"","note":""},{"data":"2025-12-12","mese":"dicembre","comune":"PORTO MANTOVANO (MN - Veneto)","incaricato":"Alessandro Zanoio","tipo":"Mammo + Eco","range_eta":"35-45","location":"piazza dei Marinai","slot":"45 posti","partner":"","note":""},{"data":"2025-12-14","mese":"dicembre","comune":"ARZERGRANDE PD - Veneto","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"piazza don luigi segala","slot":"45 posti","partner":"RED CARE","note":"3 posti per PANIZZOLO"},{"data":"2025-12-16","mese":"dicembre","comune":"ANAGNI (FR - Lazio)","incaricato":"Davide Bottoni","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Giovanni Paolo II adicente il Palazzo Comunale","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2025-12-17","mese":"dicembre","comune":"CIAMPINO Roma - Lazio","incaricato":"Troiani","tipo":"Mammo + Eco","range_eta":"35-49","location":"Largo Felice Armati","slot":"45 posti","partner":"","note":"ORARI EVENTO: 08.00 - 12.00 pausa 12.10 - 13.30 13.30 - 16.40"},{"data":"2026-01-30","mese":"gennaio","comune":"SALGAREDA","incaricato":"Diego Favaro","tipo":"Mammo + Eco","range_eta":"35-49","location":"Centro Sociale Carlo Alberto Dalla Chiesa","slot":"45 posti","partner":"RED CARE","note":"5 posti agente"},{"data":"2 e 3 febbraio 2026 + 11 febbraio","mese":"febbraio","comune":"ECG + Eco cuore Aziendale FOREL (TV - Veneto)","incaricato":"Simonetta Duregon","tipo":"Malattie Cardiovascolari","range_eta":"da definire","location":"Via per Monastier, 4, 31056 Vallio (TV)","slot":"40 posti","partner":"RED CARE","note":"orario inizio esami 08.30"},{"data":"2026-02-04","mese":"febbraio","comune":"La Gardère Retail Mammo + Eco evento aziendale (VE - Veneto)","incaricato":"massimo Bello","tipo":"Mammo + Eco","range_eta":"Aziendale","location":"Parcheggio Sosta Breve (Viale Galileo Galilei)","slot":"","partner":"RED CARE","note":""},{"data":"2026-02-05","mese":"febbraio","comune":"PORTO VIRO (M+E /Prostata) RO - Veneto","incaricato":"Giancarla Modugno","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"Piazza della Repubblica","slot":"25 posti M+E e 20 Prostata","partner":"RED CARE","note":""},{"data":"2026-03-07","mese":"marzo","comune":"SEREGNO Mappatura nevi MB - Lombardia","incaricato":"Paolo Perego","tipo":"Mappatura Nevi","range_eta":"0-100 minori accomp.","location":"Piazza Risorgimento","slot":"50 posti","partner":"RED CARE","note":"3 posti per Gerosa al mattino"},{"data":"2026-03-08","mese":"marzo","comune":"NOVA MILANESE (M+E) MB - LOMBARDIA","incaricato":"Paolo Perego","tipo":"Mammo + Eco","range_eta":"35-45","location":"Via Roma","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-13","mese":"marzo","comune":"ARCOLE M + E (VR - Veneto)","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Europa","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-14","mese":"marzo","comune":"CERVARESE S.CROCE SACCOLONGO E TEOLO","incaricato":"Giancarla Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Aldo Moro, fronte Municipio","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-15","mese":"marzo","comune":"VIGONZA M+E PD - Veneto","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Zanella","slot":"45 posti","partner":"RED CARE","note":"RISERVARE 5 POSTI AL COMUNE PER I MEDICI DI BASE"},{"data":"2026-03-18","mese":"marzo","comune":"Domus Line evento aziendale M+E Porcia - PN - FVG","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"Aziendale","location":"","slot":"da definire","partner":"SANISYSTEM","note":"dalle ore 08.00 alle 18.00"},{"data":"2026-03-23","mese":"marzo","comune":"ARCUGNANO M+E VI - Veneto","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Mariano Rumor","slot":"45 posti","partner":"RED CARE","note":""},{"data":"2026-03-25","mese":"marzo","comune":"ISOLA VICENTINA (M+E) VI - Veneto","incaricato":"Giancarla Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Marconi","slot":"45 posti","partner":"RED CARE","note":""},{"data":"26 e 27 marzo","mese":"marzo","comune":"SCHIO M+E Vi - Veneto","incaricato":"Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Falcone e Borsellino","slot":"45 posti","partner":"RED CARE","note":"7 posti + 8 posti"},{"data":"28 e 29 marzo","mese":"marzo","comune":"MONTEBELLUNA M + E (TV - Veneto)","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"presso Cantina Montelliana","slot":"45 posti a giornata","partner":"RED CARE","note":"2 posti per AmaCrai + 5 posti"},{"data":"2026-03-30","mese":"marzo","comune":"NOVENTA DI PIAVE M+E (VE - Veneto)","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-49","location":"Piazza Guglielmo Marconi","slot":"45 posti","partner":"RED CARE","note":"5 x Simonetta 1 posto per Katia Donato ore 11.00"},{"data":"2026-03-31","mese":"marzo","comune":"NOVENTA DI PIAVE Prostata (VE - Veneto)","incaricato":"Simonetta Duregon","tipo":"Prostata","range_eta":"dai 40 anni","location":"Piazza Guglielmo Marconi","slot":"40 posti","partner":"RED CARE","note":"5 x Simonetta"},{"data":"2026-04-02","mese":"aprile","comune":"BVR Aziendale M+E/Prostata","incaricato":"Direzione","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"25 donne/20 uomini","partner":"RED CARE","note":""},{"data":"2026-04-13","mese":"aprile","comune":"IBL Mappatura Nevi evento aziendale Roma - Lazio","incaricato":"massimo bello","tipo":"Mappatura Nevi","range_eta":"","location":"Roma venti Settembre","slot":"50 posti","partner":"","note":""},{"data":"2026-04-14","mese":"aprile","comune":"IVECO EV.AZIENDALE TIROIDE TORINO","incaricato":"Massimo Bello","tipo":"Tiroide","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"15 e 16 aprile","mese":"aprile","comune":"IVECO EV.AZIENDALE TIROIDE PIACENZA","incaricato":"Massimo Bello","tipo":"Tiroide","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"14 - 15 - 16 aprile","mese":"aprile","comune":"IFIS KALEIDOS Mappatura nevi FI - Toscana","incaricato":"massimo bello","tipo":"Mappatura Nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"20 - 21 - 22 aprile","mese":"aprile","comune":"NOVATION TECH Evento aziendale Tiroide + Nevi","incaricato":"massimo Bello","tipo":"Tiroide/nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"2026-05-02","mese":"maggio","comune":"COLOGNA VENETA M + E VR - Veneto","incaricato":"antonio manzi","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"","note":""},{"data":"4 - 5 - 6 maggio","mese":"maggio","comune":"IVECO Tiroide Bolzano BZ","incaricato":"Massimo Bello","tipo":"Tiroide","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"2026-05-07","mese":"maggio","comune":"BVR Aziendale M+E/Prostata","incaricato":"Massimo Bello","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-09","mese":"maggio","comune":"PONTE SAN NICOLO' Prostata (PD - Veneto)","incaricato":"Giancarla Modugno","tipo":"Prostata","range_eta":"dai 40 anni","location":"","slot":"","partner":"","note":""},{"data":"2026-05-10","mese":"maggio","comune":"NEGRAR DI VALPOLICELLA (M+E) VR - Veneto","incaricato":"Alessandro Zanoio","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-13","mese":"maggio","comune":"PORCIA M + E PN - FVG","incaricato":"Simonetta Duregon","tipo":"Mammo + Eco","range_eta":"35-45","location":"","slot":"","partner":"RED CARE","note":""},{"data":"14 e 15 maggio","mese":"maggio","comune":"CIMOLAI evento aziendale Mappatura nevi","incaricato":"Simonetta Duregon","tipo":"Mappatura Nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"2025-05-16","mese":"maggio","comune":"BRUGNERA M + E PN - FVG","incaricato":"Massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-45","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-18","mese":"maggio","comune":"ISOLA VICENTINA (M+E) VI - Veneto","incaricato":"Giancarla Modugno","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-19","mese":"maggio","comune":"VALDO evento aziendale m+e/prostata","incaricato":"filippo monis","tipo":"M+E / Prostata","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"20 e 21 maggio 2026","mese":"maggio","comune":"IFIS KALEIDOS mappatura nevi CN - Piemonte","incaricato":"","tipo":"Mappatura Nevi","range_eta":"","location":"","slot":"","partner":"","note":""},{"data":"23 - 24 - 25 maggio","mese":"maggio","comune":"CASTELFRANCO VENETO (M + E)","incaricato":"massimo Lodde","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"45 posti a giornata","partner":"RED CARE","note":"Corsa in Rosa il 24"},{"data":"2026-05-26","mese":"maggio","comune":"MASSANZAGO m+e/prostata PD - Veneto","incaricato":"Simonetta Duregon","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"","partner":"","note":""},{"data":"2026-05-27","mese":"maggio","comune":"SOMMACAMPAGNA","incaricato":"Claudio Baretta","tipo":"Mammo + Eco","range_eta":"35-49","location":"","slot":"","partner":"","note":""},{"data":"2026-05-28","mese":"maggio","comune":"GRASSOBBIO (M+E)","incaricato":"Paolo Perego","tipo":"Mammo + Eco","range_eta":"35-45","location":"","slot":"","partner":"RED CARE","note":""},{"data":"2026-05-29","mese":"maggio","comune":"GRASSOBBIO Mappatura Nevi","incaricato":"Paolo Perego","tipo":"Mappatura Nevi","range_eta":"0-100 minori accomp.","location":"","slot":"50 posti","partner":"RED CARE","note":""},{"data":"2026-05-30","mese":"maggio","comune":"PIOVENE ROCCHETTE","incaricato":"Simonetta Duregon","tipo":"M+E / Prostata","range_eta":"35-49 M+E / dai 40 per Prostata","location":"","slot":"","partner":"","note":""}];
@@ -440,8 +613,9 @@ function renderLista() {
       <td style="color:var(--tx3);font-size:11px">${e.slot||'—'}</td>
       <td style="color:var(--tx3);font-size:11px">${e.partner||'—'}</td>
       <td style="color:var(--tx3);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'—'}</td>
-      <td>
-        <button class="btn" style="font-size:10px;padding:3px 8px;color:#dc2626;border-color:transparent" onclick="event.stopPropagation();eliminaEvento(${idx})">✕</button>
+      <td style="white-space:nowrap">
+        <span style="font-size:10px;color:var(--tx3)">${completamentoOp(e)}%</span>
+        <button class="btn" style="font-size:10px;padding:3px 8px;color:#dc2626;border-color:transparent;margin-left:4px" onclick="event.stopPropagation();eliminaEvento(${idx})">✕</button>
       </td>
     </tr>`;
   }).join('');
@@ -515,6 +689,11 @@ function openModalNuovo() {
 }
 
 function openModalModifica(idx) {
+  // Apri drawer operativo invece del modal base
+  openDrawer(idx);
+}
+
+function openModalModificaBase(idx) {
   editIdx = idx;
   const e = eventi[idx];
   document.getElementById('modalTitolo').textContent = 'Modifica evento';
@@ -794,6 +973,237 @@ function initGrigliaData() {
       return;
     }
   }
+}
+
+// ── DRAWER OPERATIVO ──────────────────────────────────
+let drawerIdx = null;
+
+const OP_FIELDS = [
+  'op_data','op_orario','op_location','op_slot','op_posti','op_note',
+  'op_chiusura','op_apertura','op_mediakit','op_intervista',
+  'op_giornale','op_misure','op_deadline','op_uscita_giornale','op_invio_stampa',
+  'op_conf_telone','op_stampa_telone','op_stampa_busta','op_uscita_busta','op_stampa_rollup',
+  'op_stampa_attestati'
+];
+const OP_CHECKS = [
+  'op_edicola','op_telone','op_busta','op_conf_busta',
+  'op_rollup_ev','op_rollup_tp','op_attestati','op_giustificativo'
+];
+
+function openDrawer(idx) {
+  drawerIdx = idx;
+  const e = eventi[idx];
+  
+  // Header
+  document.getElementById('drawerTitle').textContent = e.comune;
+  document.getElementById('drawerSub').textContent = `${e.data||''} · ${e.incaricato||''} · ${e.tipo||''}`;
+  
+  // Carica dati operativi salvati
+  const op = e.operativo || {};
+  
+  // Campi testo/data
+  OP_FIELDS.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) el.value = op[f] || '';
+  });
+  
+  // Prefill da dati evento base
+  if (!op.op_data && e.data && e.data.length === 10) document.getElementById('op_data').value = e.data;
+  if (!op.op_location && e.location) document.getElementById('op_location').value = e.location;
+  if (!op.op_slot && e.slot) document.getElementById('op_slot').value = e.slot;
+  if (!op.op_note && e.note) document.getElementById('op_note').value = e.note;
+  
+  // Checkbox
+  OP_CHECKS.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) {
+      el.checked = op[f] || false;
+      const chkDiv = document.getElementById('dchk_' + f.replace('op_',''));
+      if (chkDiv) chkDiv.classList.toggle('done', op[f] || false);
+    }
+  });
+  
+  // Apri drawer
+  document.getElementById('drawer').classList.add('on');
+  document.getElementById('drawerOverlay').classList.add('on');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('on');
+  document.getElementById('drawerOverlay').classList.remove('on');
+  drawerIdx = null;
+}
+
+function toggleCheck(fieldId, divId) {
+  const el = document.getElementById(fieldId);
+  el.checked = !el.checked;
+  const div = document.getElementById(divId);
+  if (div) div.classList.toggle('done', el.checked);
+}
+
+function salvaOperativo() {
+  if (drawerIdx === null) return;
+  const op = {};
+  
+  // Campi testo/data
+  OP_FIELDS.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) op[f] = el.value;
+  });
+  
+  // Checkbox
+  OP_CHECKS.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) op[f] = el.checked;
+  });
+  
+  eventi[drawerIdx].operativo = op;
+  // Aggiorna anche i campi base
+  if (op.op_location) eventi[drawerIdx].location = op.op_location;
+  if (op.op_slot) eventi[drawerIdx].slot = op.op_slot;
+  if (op.op_note) eventi[drawerIdx].note = op.op_note;
+  
+  saveEventi();
+  toast('Scheda operativa salvata', 'success');
+  renderView(); // aggiorna vista per riflettere eventuali cambiamenti
+}
+
+function apriSchedaFinestra() {
+  if (drawerIdx === null) return;
+  salvaOperativo(); // salva prima
+  const e = eventi[drawerIdx];
+  const op = e.operativo || {};
+  
+  // Genera HTML standalone per la scheda
+  const tipoColor = (t) => {
+    const tl = (t||'').toLowerCase();
+    if (tl.includes('nevi')) return '#10b981';
+    if (tl.includes('tiroide')) return '#f59e0b';
+    if (tl.includes('cardiov')||tl.includes('cuore')) return '#ef4444';
+    if (tl.includes('prostata') && (tl.includes('mammo')||tl.includes('m+e'))) return '#6366f1';
+    if (tl.includes('prostata')) return '#8b5cf6';
+    return '#26ADE4';
+  };
+  
+  const fmtDate = (d) => {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('it-IT'); } catch { return d; }
+  };
+
+  const chk = (v) => v ? '✅' : '⬜';
+  
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scheda — ${e.comune}</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',sans-serif;background:#f0f4f8;color:#0d1117;padding:24px}
+.card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.card-head{padding:20px 24px;background:#fff;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:flex-start;gap:14px}
+.tipo-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.comune{font-size:20px;font-weight:600;color:#0d1117}
+.meta{font-size:12px;color:#94a3b8;margin-top:4px}
+.sec{padding:18px 24px;border-bottom:1px solid rgba(0,0,0,.06)}
+.sec:last-child{border-bottom:none}
+.sec-title{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.field{display:flex;flex-direction:column;gap:3px}
+.label{font-size:10px;font-weight:500;color:#94a3b8}
+.value{font-size:13px;color:#0d1117;font-weight:400}
+.value.empty{color:#c0c0c0;font-style:italic}
+.chk-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(0,0,0,.08);border-radius:8px}
+.chk-label{font-size:12px;color:#0d1117}
+.chk-label.done{text-decoration:line-through;color:#94a3b8}
+.btn-print{font-family:'Poppins',sans-serif;background:#26ADE4;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:20px}
+.btn-print:hover{background:#1a8fc2}
+@media print{.btn-print{display:none}body{background:#fff;padding:12px}}
+</style>
+</head>
+<body>
+<button class="btn-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+<div class="card">
+  <div class="card-head">
+    <div class="tipo-dot" style="background:${tipoColor(e.tipo)}"></div>
+    <div>
+      <div class="comune">${e.comune}</div>
+      <div class="meta">${e.data||'—'} · ${e.mese||''} · ${e.incaricato||'—'} · ${e.tipo||'—'}</div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">📋 Dati evento</div>
+    <div class="grid">
+      <div class="field"><div class="label">Data evento</div><div class="value ${!op.op_data?'empty':''}">${fmtDate(op.op_data)||'—'}</div></div>
+      <div class="field"><div class="label">Orario apertura</div><div class="value ${!op.op_orario?'empty':''}">${op.op_orario||'—'}</div></div>
+      <div class="field"><div class="label">Location</div><div class="value ${!op.op_location?'empty':''}">${op.op_location||e.location||'—'}</div></div>
+      <div class="field"><div class="label">Slot / Posti</div><div class="value ${!op.op_slot?'empty':''}">${op.op_slot||e.slot||'—'}</div></div>
+    </div>
+    ${op.op_posti?`<div class="field" style="margin-top:12px"><div class="label">Posti da riservare</div><div class="value">${op.op_posti}</div></div>`:''}
+    ${op.op_note||e.note?`<div class="field" style="margin-top:12px"><div class="label">Note</div><div class="value">${op.op_note||e.note}</div></div>`:''}
+  </div>
+  <div class="sec">
+    <div class="sec-title">📅 Prenotazioni & Media Kit</div>
+    <div class="grid">
+      <div class="field"><div class="label">Chiusura prenotazioni</div><div class="value ${!op.op_chiusura?'empty':''}">${fmtDate(op.op_chiusura)||'—'}</div></div>
+      <div class="field"><div class="label">Apertura prenotazioni</div><div class="value ${!op.op_apertura?'empty':''}">${fmtDate(op.op_apertura)||'—'}</div></div>
+      <div class="field"><div class="label">Invio Media Kit</div><div class="value ${!op.op_mediakit?'empty':''}">${fmtDate(op.op_mediakit)||'—'}</div></div>
+      <div class="field"><div class="label">Intervista comune</div><div class="value ${!op.op_intervista?'empty':''}">${op.op_intervista||'—'}</div></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">📰 Giornale</div>
+    <div class="grid3">
+      <div class="field"><div class="label">Nome giornale</div><div class="value ${!op.op_giornale?'empty':''}">${op.op_giornale||'—'}</div></div>
+      <div class="field"><div class="label">Misure</div><div class="value ${!op.op_misure?'empty':''}">${op.op_misure||'—'}</div></div>
+      <div class="field"><div class="label">Deadline grafica</div><div class="value ${!op.op_deadline?'empty':''}">${fmtDate(op.op_deadline)||'—'}</div></div>
+      <div class="field"><div class="label">Uscita giornale</div><div class="value ${!op.op_uscita_giornale?'empty':''}">${fmtDate(op.op_uscita_giornale)||'—'}</div></div>
+      <div class="field"><div class="label">Invio per la stampa</div><div class="value ${!op.op_invio_stampa?'empty':''}">${fmtDate(op.op_invio_stampa)||'—'}</div></div>
+    </div>
+    <div style="margin-top:12px"><div class="chk-row" style="width:fit-content">${chk(op.op_edicola)} <span class="chk-label ${op.op_edicola?'done':''}">Edicola prenotata</span></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">🖨️ Materiali & Stampa</div>
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="chk-row">${chk(op.op_telone)} <span class="chk-label ${op.op_telone?'done':''}">Telone</span></div>
+      <div class="field"><div class="label">Conferma telone</div><div class="value ${!op.op_conf_telone?'empty':''}">${fmtDate(op.op_conf_telone)||'—'}</div></div>
+      <div class="field"><div class="label">Stampa telone</div><div class="value ${!op.op_stampa_telone?'empty':''}">${fmtDate(op.op_stampa_telone)||'—'}</div></div>
+    </div>
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="chk-row">${chk(op.op_busta)} <span class="chk-label ${op.op_busta?'done':''}">Busta</span></div>
+      <div class="field"><div class="label">Stampa busta</div><div class="value ${!op.op_stampa_busta?'empty':''}">${fmtDate(op.op_stampa_busta)||'—'}</div></div>
+      <div class="field"><div class="label">Uscita busta</div><div class="value ${!op.op_uscita_busta?'empty':''}">${fmtDate(op.op_uscita_busta)||'—'}</div></div>
+    </div>
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="chk-row">${chk(op.op_rollup_ev)} <span class="chk-label ${op.op_rollup_ev?'done':''}">Roll-Up EV</span></div>
+      <div class="chk-row">${chk(op.op_rollup_tp)} <span class="chk-label ${op.op_rollup_tp?'done':''}">Roll-Up TP</span></div>
+      <div class="field"><div class="label">Stampa Roll-Up</div><div class="value ${!op.op_stampa_rollup?'empty':''}">${fmtDate(op.op_stampa_rollup)||'—'}</div></div>
+    </div>
+    <div class="grid3">
+      <div class="chk-row">${chk(op.op_attestati)} <span class="chk-label ${op.op_attestati?'done':''}">Attestati</span></div>
+      <div class="field"><div class="label">Stampa attestati</div><div class="value ${!op.op_stampa_attestati?'empty':''}">${fmtDate(op.op_stampa_attestati)||'—'}</div></div>
+      <div class="chk-row">${chk(op.op_giustificativo)} <span class="chk-label ${op.op_giustificativo?'done':''}">Giustificativo</span></div>
+    </div>
+  </div>
+</div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=800,scrollbars=yes');
+  w.document.write(html);
+  w.document.close();
+}
+
+// Completamento operativo — calcola % campi compilati
+function completamentoOp(e) {
+  if (!e.operativo) return 0;
+  const op = e.operativo;
+  const tot = OP_FIELDS.length + OP_CHECKS.length;
+  const comp = OP_FIELDS.filter(f => op[f] && op[f] !== '').length +
+               OP_CHECKS.filter(f => op[f]).length;
+  return Math.round((comp / tot) * 100);
 }
 
 // ── UTILS ─────────────────────────────────────────────
