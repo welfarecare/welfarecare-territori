@@ -3,890 +3,333 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>WelfareCare — Gestione Prenotazioni</title>
+<title>WelfareCare — Portale Organizzazione</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --wc:#26ADE4;--wcd:#1a8fc2;--wcl:#e8f6fc;
+  --wc:#26ADE4;--wcd:#1a8fc2;--wcdark:#0e6a96;
+  --wcl:#e8f6fc;--wcm:#b3e2f5;
   --bg:#f0f4f8;--sur:#fff;--sur2:#f7f9fb;
   --bd:rgba(0,0,0,.07);--bd2:rgba(0,0,0,.12);
   --tx:#0d1117;--tx2:#4a5568;--tx3:#94a3b8;
-  --f:'Poppins',sans-serif;--r:10px;--rl:16px;
+  --f:'Poppins',sans-serif;
+  --r:12px;--rl:18px;
 }
-body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column}
+body{font-family:var(--f);background:#0d1117;color:var(--tx);min-height:100vh;display:flex;flex-direction:column}
 
-/* AUTH */
-.auth-wrap{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
-.auth-box{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:40px;width:400px}
-.auth-box img{width:180px;height:auto;margin-bottom:24px;display:block}
-.auth-title{font-size:16px;font-weight:600;margin-bottom:4px}
-.auth-sub{font-size:12px;color:var(--tx3);margin-bottom:22px}
-.auth-err{background:#fee2e2;color:#dc2626;font-size:12px;padding:10px 12px;border-radius:var(--r);margin-bottom:12px;display:none}
-
-/* LAYOUT */
-.app{display:none;height:100vh;flex-direction:column}
-.app.on{display:flex}
-.topbar{height:52px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
-.tb-back{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3);cursor:pointer;padding:5px 9px;border-radius:var(--r);text-decoration:none;border:none;background:none;font-family:var(--f);transition:background .15s}
-.tb-back:hover{background:var(--sur2);color:var(--tx2)}
-.tb-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
-.tb-div{width:1px;height:20px;background:var(--bd2)}
-.tb-title{font-size:13px;font-weight:600;color:var(--tx)}
+/* ── TOPBAR ── */
+.topbar{height:58px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 32px;gap:16px;position:sticky;top:0;z-index:100}
+.tb-logo svg{width:160px;height:auto;display:block}
+.tb-div{width:1px;height:24px;background:var(--bd2);flex-shrink:0}
+.tb-title{font-size:12px;font-weight:500;color:var(--tx3);letter-spacing:.04em;text-transform:uppercase}
 .tb-sp{flex:1}
-.av{width:28px;height:28px;border-radius:50%;background:var(--wc);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0}
+.tb-user{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 10px;border-radius:var(--r);position:relative;transition:background .15s}
+.tb-user:hover{background:var(--sur2)}
+.av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--wc),var(--wcdark));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(38,173,228,.3)}
+.tb-uname{font-size:13px;font-weight:500;color:var(--tx)}
+.tb-urole{font-size:10px;color:var(--tx3)}
+.umenu{position:absolute;top:calc(100% + 8px);right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:6px;min-width:170px;display:none;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.umenu.on{display:block}
+.umi{padding:9px 13px;font-size:12px;color:var(--tx2);border-radius:var(--r);cursor:pointer;transition:background .12s}
+.umi:hover{background:var(--sur2);color:var(--tx)}
+.umi.red{color:#dc2626}.umi.red:hover{background:#fef2f2}
+.umi-div{height:1px;background:var(--bd);margin:4px 0}
 
-.body{display:flex;flex:1;overflow:hidden}
+/* ── AUTH OVERLAY ── */
+.auth-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0d1117 0%,#1a2744 50%,#0e3a5c 100%);display:flex;align-items:center;justify-content:center;z-index:500}
+.auth-overlay.hidden{display:none}
+.auth-box{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:44px 40px;width:420px;text-align:center}
+.auth-logo{margin-bottom:32px}
+.auth-logo svg{width:200px;height:auto;display:inline-block}
+.auth-tagline{font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:32px;font-weight:400}
+.auth-err{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#fca5a5;font-size:12px;padding:10px 14px;border-radius:var(--r);margin-bottom:14px;display:none;text-align:left}
+.auth-fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;text-align:left}
+.auth-fl{font-size:11px;font-weight:500;color:rgba(255,255,255,.5);letter-spacing:.03em}
+.auth-fi{font-family:var(--f);font-size:13px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:var(--r);background:rgba(255,255,255,.06);color:#fff;width:100%;outline:none;transition:border-color .15s}
+.auth-fi::placeholder{color:rgba(255,255,255,.2)}
+.auth-fi:focus{border-color:var(--wc);background:rgba(38,173,228,.08)}
+.auth-btn{font-family:var(--f);font-size:13px;font-weight:600;padding:13px;border-radius:var(--r);cursor:pointer;border:none;background:linear-gradient(135deg,var(--wc),var(--wcdark));color:#fff;width:100%;margin-top:6px;letter-spacing:.02em;transition:opacity .15s,transform .1s}
+.auth-btn:hover{opacity:.92;transform:translateY(-1px)}
+.auth-btn:active{transform:translateY(0)}
+.auth-dots{display:flex;justify-content:center;gap:6px;margin-top:28px}
+.auth-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.15)}
+.auth-dot.on{background:var(--wc)}
 
-/* SIDEBAR */
-.side{width:200px;background:var(--sur);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;padding:12px 8px}
-.snl{font-size:9px;font-weight:600;color:var(--tx3);letter-spacing:.07em;text-transform:uppercase;padding:10px 8px 4px}
-.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--tx2);transition:all .12s}
-.ni:hover{background:var(--sur2);color:var(--tx)}
-.ni.on{background:var(--wcl);color:var(--wcd);font-weight:500}
-.ni svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0}
-.nib{margin-left:auto;background:var(--wc);color:#fff;font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px}
+/* ── MAIN ── */
+.main{flex:1;padding:48px 32px;max-width:1100px;margin:0 auto;width:100%}
+.greeting{margin-bottom:10px}
+.greeting-name{font-size:26px;font-weight:600;color:var(--tx)}
+.greeting-sub{font-size:14px;color:var(--tx3);margin-top:4px}
+.section-label{font-size:11px;font-weight:600;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin:40px 0 16px}
 
-/* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.subbar{height:50px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
-.sb-title{font-size:14px;font-weight:600;color:var(--tx);flex:1}
-.ct{flex:1;overflow-y:auto;padding:20px}
-.sec{display:none}.sec.on{display:block}
+/* ── APP CARDS ── */
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.app-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:28px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;text-decoration:none;display:block}
+.app-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s}
+.app-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.1)}
+.app-card.locked{cursor:not-allowed;opacity:.55}
+.app-card.locked:hover{transform:none;box-shadow:none}
 
-/* COMMON */
-.btn{font-family:var(--f);font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn:hover{background:var(--sur2)}
-.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
-.btnp{background:var(--wc);color:#fff;border-color:var(--wc)}
-.btnp:hover{background:var(--wcd)}
-.btnd{background:#dc2626;color:#fff;border-color:#dc2626}
-.btns{color:var(--tx3);border-color:var(--bd);font-size:11px;padding:5px 10px}
-.fi{font-family:var(--f);font-size:12px;padding:8px 11px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none;transition:border-color .15s}
-.fi:focus{border-color:var(--wc)}
-.fs{font-family:var(--f);font-size:12px;padding:8px 11px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);outline:none}
-.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
-.fl{font-size:10px;font-weight:500;color:var(--tx2)}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fgrid .full{grid-column:1/-1}
+/* Territori — blu */
+.app-card.territori::before{background:linear-gradient(135deg,rgba(38,173,228,.06),rgba(14,106,150,.04))}
+.app-card.territori:hover::before{opacity:1}
+.app-card.territori .card-icon-bg{background:linear-gradient(135deg,var(--wc),var(--wcdark))}
 
-/* CARDS */
-.card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
-.card:last-child{margin-bottom:0}
-.ch{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px}
-.ct2{font-size:13px;font-weight:600;color:var(--tx)}
-.tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{padding:8px 14px;text-align:left;font-weight:500;font-size:10px;color:var(--tx3);background:var(--sur2);border-bottom:1px solid var(--bd);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
-.tbl td{padding:9px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:var(--sur2)}
-.ts{overflow-x:auto}
-.bx{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
-.bg{background:#d1fae5;color:#065f46}.ba{background:#fef3c7;color:#92400e}
-.bb{background:var(--wcl);color:var(--wcd)}.br{background:#fee2e2;color:#dc2626}
-.bk{background:var(--sur2);color:var(--tx3);border:1px solid var(--bd)}
+/* Prenotazioni — verde */
+.app-card.prenotazioni::before{background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(5,150,105,.04))}
+.app-card.prenotazioni:hover::before{opacity:1}
+.app-card.prenotazioni .card-icon-bg{background:linear-gradient(135deg,#10b981,#059669)}
 
-/* KPIS */
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.kpi{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:14px 16px}
-.kl{font-size:10px;color:var(--tx3);font-weight:500;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
-.kv{font-size:22px;font-weight:600;color:var(--tx);line-height:1}
-.ks{font-size:10px;color:var(--tx3);margin-top:3px}
+/* Materiale — arancio */
+.app-card.materiale::before{background:linear-gradient(135deg,rgba(245,158,11,.06),rgba(217,119,6,.04))}
+.app-card.materiale:hover::before{opacity:1}
+.app-card.materiale .card-icon-bg{background:linear-gradient(135deg,#f59e0b,#d97706)}
 
-/* MODAL */
-.mbg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
-.mbg.on{display:flex}
-.modal{background:var(--sur);border-radius:var(--rl);width:640px;max-width:100%;max-height:92vh;overflow-y:auto;border:1px solid var(--bd);box-shadow:0 20px 60px rgba(0,0,0,.15)}
-.mh{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:1}
-.mt{font-size:14px;font-weight:600;color:var(--tx)}
-.mc{background:none;border:none;font-size:20px;color:var(--tx3);cursor:pointer;padding:2px 8px;border-radius:var(--r);line-height:1}
-.mc:hover{background:var(--sur2)}
-.mb{padding:20px}
-.mf{padding:13px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--sur)}
-.sep{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:14px;margin-top:16px}
-.sep:first-child{margin-top:0}
+.card-icon-bg{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.card-icon-bg svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8}
+.card-name{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:6px}
+.card-desc{font-size:12px;color:var(--tx3);line-height:1.6}
+.card-arrow{position:absolute;bottom:24px;right:24px;width:28px;height:28px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .2s}
+.app-card:hover .card-arrow{transform:translateX(3px)}
+.card-arrow svg{width:13px;height:13px;stroke:var(--tx3);fill:none;stroke-width:2}
+.card-badge{position:absolute;top:20px;right:20px;background:var(--bg);border:1px solid var(--bd2);border-radius:20px;font-size:10px;font-weight:600;color:var(--tx3);padding:3px 9px;letter-spacing:.04em}
 
-/* SLOT EDITOR */
-.slot-row{display:grid;grid-template-columns:1fr 1fr 80px auto;gap:8px;align-items:center;margin-bottom:8px}
+/* ── RECENT ── */
+.recent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.recent-item{background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.recent-item:hover{border-color:var(--wcm);background:var(--wcl)}
+.ri-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ri-info{flex:1;min-width:0}
+.ri-name{font-size:12px;font-weight:500;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-meta{font-size:10px;color:var(--tx3);margin-top:2px}
 
-/* EVENT CARD */
-.ev-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:14px;transition:box-shadow .15s}
-.ev-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
-.ev-card-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bd)}
-.ev-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.ev-title{font-size:13px;font-weight:600;color:var(--tx);flex:1}
-.ev-meta{font-size:11px;color:var(--tx3)}
-.ev-body{padding:12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.ev-stat{text-align:center}
-.ev-stat-v{font-size:18px;font-weight:600;color:var(--tx)}
-.ev-stat-l{font-size:10px;color:var(--tx3)}
-.ev-foot{padding:10px 16px;border-top:1px solid var(--bd);display:flex;gap:8px}
-
-/* PRENOTAZIONE DETAIL */
-.pren-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
-.pren-nome{font-size:13px;font-weight:600;color:var(--tx)}
-.pren-meta{font-size:11px;color:var(--tx3);margin-top:2px}
-.pren-cf{font-size:11px;font-family:monospace;background:var(--sur2);padding:2px 6px;border-radius:4px;color:var(--tx2)}
-
-.toast{position:fixed;bottom:20px;right:20px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--tx);color:#fff;padding:12px 18px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.15)}
 .toast.success{background:#059669}.toast.error{background:#dc2626}
-.loading{text-align:center;padding:32px;color:var(--tx3);font-size:12px}
-.empty{text-align:center;padding:36px;color:var(--tx3);font-size:12px}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .cards-grid,.recent-grid{grid-template-columns:1fr}
+  .main{padding:24px 16px}
+  .topbar{padding:0 16px}
+}
 </style>
 </head>
 <body>
+
 <div class="toast" id="toast"></div>
 
-<!-- AUTH -->
-<div class="auth-wrap" id="authWrap">
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
-    <svg viewBox="0 0 453 67" xmlns="http://www.w3.org/2000/svg" style="width:180px;height:auto;margin-bottom:24px;display:block">
-      <polygon fill="#26ADE4" points="49,64 39.5,23.7 29.7,64 17.5,64 0,2 13.8,2 24,42.2 32.6,2 46.2,2 55.6,42.2 65.7,2 78.9,2 61.6,64"/>
-      <path fill="#26ADE4" d="M85.5,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H85.5z"/>
-      <rect fill="#26ADE4" x="120.9" y="1.3" width="12.1" height="62.7"/>
-      <path fill="#26ADE4" d="M142.5,64V26.7h-6.8V18.1h6.8C142.5,6.9,149,1.3,162,1.3v9.8c-1.6,0-2.8.1-3.8.3s-1.7.6-2.3,1.2-.9,1.3-1.2,2.2-.3,2-.3,3.3h7.8v8.6h-7.8V64H142.5z"/>
-      <path fill="#26ADE4" d="M335.5,42.7c-.7,3.5-1.8,6.8-3.3,9.6s-3.4,5.3-5.6,7.4-4.9,3.6-7.9,4.8-6.3,1.7-9.9,1.7c-4,0-7.8-.7-11.3-2.1s-6.6-3.4-9.1-6.2-4.6-6.1-6-10.1-2.2-8.7-2.2-14c0-5.2.7-9.9,2-14.1s3.2-7.7,5.7-10.6,5.5-5.1,9.1-6.7S304.6,0,309.1,0c3.9,0,7.4.6,10.5,1.7s5.9,2.7,8.1,4.8,4.1,4.4,5.4,7.1,2.2,5.7,2.5,8.8h-13c-.9-3.6-2.6-6.3-5-8.3s-5.3-2.9-8.4-2.9c-5.4,0-9.4,1.9-11.9,5.8s-3.8,9.2-3.8,16c0,6.9,1.3,12.3,3.8,16.1s6.3,5.7,11.3,5.7c3.9,0,7-1,9.3-3.1s3.9-5.1,4.8-9H335.5z"/>
-      <path fill="#26ADE4" d="M382.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H382.8z"/>
-      <path fill="#26ADE4" d="M420.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H420.9z"/>
-    </svg>
-    <div class="auth-title">Gestione Prenotazioni</div>
-    <div class="auth-sub">Pannello amministratore</div>
+    <div class="auth-logo">
+      <svg style="width:200px;height:auto;display:inline-block;margin-bottom:8px" id="Livello_1" data-name="Livello 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 452.53 66.14"><defs><style>.cls-1{fill:#ffffff;}</style></defs><title>Logo web</title><polygon class="cls-1" points="49.07 63.99 39.46 23.7 29.67 63.99 17.54 63.99 0 2.05 13.81 2.05 23.98 42.17 32.56 2.05 46.18 2.05 55.6 42.17 65.67 2.05 78.92 2.05 61.57 63.99 49.07 63.99"/><path class="cls-1" d="M85.54,44.22a13.09,13.09,0,0,0,3,8.3,9.23,9.23,0,0,0,7.23,3.08,10.18,10.18,0,0,0,5.27-1.35A6.15,6.15,0,0,0,104,50.47h12.5a20.09,20.09,0,0,1-7.47,10.91,21.12,21.12,0,0,1-12.68,3.83q-23,0-23-25a29,29,0,0,1,1.49-9.61,20.62,20.62,0,0,1,4.34-7.37,18.71,18.71,0,0,1,7-4.71,25.26,25.26,0,0,1,9.42-1.64q10.63,0,16.09,6.82t5.46,20.52Zm19.13-7.65a12.64,12.64,0,0,0-.89-4.43,9.24,9.24,0,0,0-2.1-3.17,8.39,8.39,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61A8.61,8.61,0,0,0,89,29.15a11.4,11.4,0,0,0-3,7.42Z"/><rect class="cls-1" x="120.9" y="1.31" width="12.13" height="62.69"/><path class="cls-1" d="M142.54,64V26.68h-6.81V18.1h6.81q0-16.8,19.5-16.79V11.1a17.57,17.57,0,0,0-3.78.33A4.58,4.58,0,0,0,156,12.59a4.58,4.58,0,0,0-1.17,2.2,14.15,14.15,0,0,0-.33,3.31h7.84v8.58h-7.84V64Z"/><path class="cls-1" d="M191.7,64a18.65,18.65,0,0,1-.74-4.11,14.94,14.94,0,0,1-5.69,3.87,21.53,21.53,0,0,1-8.21,1.45q-7.94,0-11.62-3.5a12,12,0,0,1-3.68-9.1,16.62,16.62,0,0,1,1.59-7.88,11.74,11.74,0,0,1,4.38-4.62,21.18,21.18,0,0,1,6.67-2.47q3.87-.8,8.44-1.44c3-.44,5.1-1,6.16-1.73a3.91,3.91,0,0,0,1.59-3.5,3.9,3.9,0,0,0-2.1-3.5,10.93,10.93,0,0,0-5.65-1.26c-2.8,0-4.8.63-6,1.87A8.73,8.73,0,0,0,174.54,33H163.25a20.69,20.69,0,0,1,1.17-6.53,12.41,12.41,0,0,1,3.45-5.13,16.2,16.2,0,0,1,6.2-3.31,32.26,32.26,0,0,1,9.33-1.16,30.29,30.29,0,0,1,9.19,1.21,14.7,14.7,0,0,1,6.06,3.5A13.31,13.31,0,0,1,202,27.29,26.77,26.77,0,0,1,203,35V64Zm-.84-22.49a6.52,6.52,0,0,1-2.7,1.5A51.71,51.71,0,0,1,183,44.22c-3.48.68-5.88,1.55-7.18,2.61a5.53,5.53,0,0,0-2,4.57q0,5.13,5.87,5.13a11.67,11.67,0,0,0,4.34-.79,10.62,10.62,0,0,0,3.45-2.15,10.83,10.83,0,0,0,2.34-3.17,8.71,8.71,0,0,0,.88-3.87Z"/><path class="cls-1" d="M207.84,64V18.1h11.38v5.5A15,15,0,0,1,222.35,20a13.37,13.37,0,0,1,3.36-2,12.87,12.87,0,0,1,3.5-.89,35.83,35.83,0,0,1,3.63-.19h1.59V29.29a21.16,21.16,0,0,0-3.36-.28Q220,29,220,40.11V64Z"/><path class="cls-1" d="M245.9,44.22a13.09,13.09,0,0,0,3,8.3,9.23,9.23,0,0,0,7.23,3.08,10.18,10.18,0,0,0,5.27-1.35,6.15,6.15,0,0,0,2.94-3.78h12.5a20.14,20.14,0,0,1-7.47,10.91,21.12,21.12,0,0,1-12.68,3.83q-23,0-23-25a29,29,0,0,1,1.49-9.61,20.62,20.62,0,0,1,4.34-7.37,18.71,18.71,0,0,1,6.95-4.71A25.26,25.26,0,0,1,256,16.88q10.64,0,16.09,6.82t5.46,20.52ZM265,36.57a12.64,12.64,0,0,0-.89-4.43A9.24,9.24,0,0,0,262,29a8.39,8.39,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61,8.61,8.61,0,0,0-6.3,2.66,11.35,11.35,0,0,0-3,7.42Z"/><path class="cls-1" d="M335.55,42.73a34.92,34.92,0,0,1-3.26,9.6,25.92,25.92,0,0,1-5.65,7.37,24.22,24.22,0,0,1-7.88,4.76,27.93,27.93,0,0,1-9.89,1.68,30.9,30.9,0,0,1-11.33-2,24.3,24.3,0,0,1-9.1-6.16,29.29,29.29,0,0,1-6-10.12,40.74,40.74,0,0,1-2.2-14,46.37,46.37,0,0,1,2-14.13A30.08,30.08,0,0,1,288,9a24.91,24.91,0,0,1,9.09-6.67,29.85,29.85,0,0,1,12-2.33,30.33,30.33,0,0,1,10.49,1.73,25,25,0,0,1,8.12,4.75,23.08,23.08,0,0,1,5.41,7.14,25.55,25.55,0,0,1,2.47,8.77h-13a14.56,14.56,0,0,0-5-8.26,13.23,13.23,0,0,0-8.4-2.94q-8.11,0-11.94,5.83t-3.82,16q0,10.36,3.78,16.1t11.33,5.73a13.43,13.43,0,0,0,9.28-3.12,16.54,16.54,0,0,0,4.81-9Z"/><path class="cls-1" d="M366.71,64a19.23,19.23,0,0,1-.75-4.11,14.86,14.86,0,0,1-5.69,3.87,21.49,21.49,0,0,1-8.21,1.45q-7.92,0-11.61-3.5a12,12,0,0,1-3.69-9.1,16.62,16.62,0,0,1,1.59-7.88,11.83,11.83,0,0,1,4.39-4.62,21,21,0,0,1,6.66-2.47c2.59-.53,5.4-1,8.45-1.44s5.1-1,6.15-1.73a3.91,3.91,0,0,0,1.59-3.5,3.9,3.9,0,0,0-2.1-3.5,10.91,10.91,0,0,0-5.64-1.26c-2.8,0-4.81.63-6,1.87A8.73,8.73,0,0,0,349.55,33H338.26a21,21,0,0,1,1.16-6.53,12.53,12.53,0,0,1,3.46-5.13,16.12,16.12,0,0,1,6.2-3.31,32.26,32.26,0,0,1,9.33-1.16,30.33,30.33,0,0,1,9.19,1.21,14.76,14.76,0,0,1,6.06,3.5A13.29,13.29,0,0,1,377,27.29,26.41,26.41,0,0,1,378,35V64Zm-.84-22.49a6.52,6.52,0,0,1-2.7,1.5A52.75,52.75,0,0,1,358,44.22q-5.22,1-7.18,2.61a5.56,5.56,0,0,0-2,4.57q0,5.13,5.88,5.13a11.7,11.7,0,0,0,4.34-.79,10.6,10.6,0,0,0,5.78-5.32,8.72,8.72,0,0,0,.89-3.87Z"/><path class="cls-1" d="M382.85,64V18.1h11.38v5.5A15,15,0,0,1,397.35,20a13.37,13.37,0,0,1,3.36-2,13,13,0,0,1,3.5-.89,35.88,35.88,0,0,1,3.64-.19h1.59V29.29a21.16,21.16,0,0,0-3.36-.28Q395,29,395,40.11V64Z"/><path class="cls-1" d="M420.91,44.22a13.14,13.14,0,0,0,3,8.3,9.26,9.26,0,0,0,7.23,3.08,10.16,10.16,0,0,0,5.27-1.35,6.11,6.11,0,0,0,2.94-3.78h12.5a20.13,20.13,0,0,1-7.46,10.91,21.18,21.18,0,0,1-12.69,3.83q-23,0-23-25a29.24,29.24,0,0,1,1.49-9.61,20.76,20.76,0,0,1,4.34-7.37,18.79,18.79,0,0,1,6.95-4.71A25.34,25.34,0,0,1,431,16.88q10.63,0,16.1,6.82t5.45,20.52ZM440,36.57a12.87,12.87,0,0,0-.88-4.43,9.24,9.24,0,0,0-2.1-3.17,8.43,8.43,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61,8.65,8.65,0,0,0-6.3,2.66,11.4,11.4,0,0,0-3,7.42Z"/></svg>
+    </div>
+
     <div class="auth-err" id="authErr"></div>
-    <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="lEmail" placeholder="nome@welfarecare.org"/></div>
-    <div class="fg"><div class="fl">Password</div><input class="fi" type="password" id="lPwd" placeholder="••••••••"/></div>
-    <button class="btn btnp" style="width:100%;padding:10px;font-size:13px;justify-content:center" onclick="login()" id="lBtn">Accedi</button>
+    <div class="auth-fg">
+      <div class="auth-fl">Email</div>
+      <input class="auth-fi" type="email" id="lEmail" placeholder="nome@welfarecare.org" autocomplete="email"/>
+    </div>
+    <div class="auth-fg">
+      <div class="auth-fl">Password</div>
+      <input class="auth-fi" type="password" id="lPwd" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="auth-btn" onclick="login()" id="lBtn">Accedi</button>
+
   </div>
 </div>
 
 <!-- APP -->
-<div class="app" id="appWrap">
-  <div class="topbar">
-    <a class="tb-back" href="/">
-      <svg viewBox="0 0 16 16"><path d="M10 12L6 8l4-4"/></svg>Portale
-    </a>
-    <div class="tb-div"></div>
-    <div class="tb-title">Gestione Prenotazioni</div>
-    <div class="tb-sp"></div>
+<div class="topbar" id="topbar" style="display:none">
+    <div class="tb-logo">
+    <svg style="width:170px;height:25px;display:block" id="Livello_1" data-name="Livello 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 452.53 66.14"><defs><style>.cls-1{fill:#27ace3;}</style></defs><title>Logo web</title><polygon class="cls-1" points="49.07 63.99 39.46 23.7 29.67 63.99 17.54 63.99 0 2.05 13.81 2.05 23.98 42.17 32.56 2.05 46.18 2.05 55.6 42.17 65.67 2.05 78.92 2.05 61.57 63.99 49.07 63.99"/><path class="cls-1" d="M85.54,44.22a13.09,13.09,0,0,0,3,8.3,9.23,9.23,0,0,0,7.23,3.08,10.18,10.18,0,0,0,5.27-1.35A6.15,6.15,0,0,0,104,50.47h12.5a20.09,20.09,0,0,1-7.47,10.91,21.12,21.12,0,0,1-12.68,3.83q-23,0-23-25a29,29,0,0,1,1.49-9.61,20.62,20.62,0,0,1,4.34-7.37,18.71,18.71,0,0,1,7-4.71,25.26,25.26,0,0,1,9.42-1.64q10.63,0,16.09,6.82t5.46,20.52Zm19.13-7.65a12.64,12.64,0,0,0-.89-4.43,9.24,9.24,0,0,0-2.1-3.17,8.39,8.39,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61A8.61,8.61,0,0,0,89,29.15a11.4,11.4,0,0,0-3,7.42Z"/><rect class="cls-1" x="120.9" y="1.31" width="12.13" height="62.69"/><path class="cls-1" d="M142.54,64V26.68h-6.81V18.1h6.81q0-16.8,19.5-16.79V11.1a17.57,17.57,0,0,0-3.78.33A4.58,4.58,0,0,0,156,12.59a4.58,4.58,0,0,0-1.17,2.2,14.15,14.15,0,0,0-.33,3.31h7.84v8.58h-7.84V64Z"/><path class="cls-1" d="M191.7,64a18.65,18.65,0,0,1-.74-4.11,14.94,14.94,0,0,1-5.69,3.87,21.53,21.53,0,0,1-8.21,1.45q-7.94,0-11.62-3.5a12,12,0,0,1-3.68-9.1,16.62,16.62,0,0,1,1.59-7.88,11.74,11.74,0,0,1,4.38-4.62,21.18,21.18,0,0,1,6.67-2.47q3.87-.8,8.44-1.44c3-.44,5.1-1,6.16-1.73a3.91,3.91,0,0,0,1.59-3.5,3.9,3.9,0,0,0-2.1-3.5,10.93,10.93,0,0,0-5.65-1.26c-2.8,0-4.8.63-6,1.87A8.73,8.73,0,0,0,174.54,33H163.25a20.69,20.69,0,0,1,1.17-6.53,12.41,12.41,0,0,1,3.45-5.13,16.2,16.2,0,0,1,6.2-3.31,32.26,32.26,0,0,1,9.33-1.16,30.29,30.29,0,0,1,9.19,1.21,14.7,14.7,0,0,1,6.06,3.5A13.31,13.31,0,0,1,202,27.29,26.77,26.77,0,0,1,203,35V64Zm-.84-22.49a6.52,6.52,0,0,1-2.7,1.5A51.71,51.71,0,0,1,183,44.22c-3.48.68-5.88,1.55-7.18,2.61a5.53,5.53,0,0,0-2,4.57q0,5.13,5.87,5.13a11.67,11.67,0,0,0,4.34-.79,10.62,10.62,0,0,0,3.45-2.15,10.83,10.83,0,0,0,2.34-3.17,8.71,8.71,0,0,0,.88-3.87Z"/><path class="cls-1" d="M207.84,64V18.1h11.38v5.5A15,15,0,0,1,222.35,20a13.37,13.37,0,0,1,3.36-2,12.87,12.87,0,0,1,3.5-.89,35.83,35.83,0,0,1,3.63-.19h1.59V29.29a21.16,21.16,0,0,0-3.36-.28Q220,29,220,40.11V64Z"/><path class="cls-1" d="M245.9,44.22a13.09,13.09,0,0,0,3,8.3,9.23,9.23,0,0,0,7.23,3.08,10.18,10.18,0,0,0,5.27-1.35,6.15,6.15,0,0,0,2.94-3.78h12.5a20.14,20.14,0,0,1-7.47,10.91,21.12,21.12,0,0,1-12.68,3.83q-23,0-23-25a29,29,0,0,1,1.49-9.61,20.62,20.62,0,0,1,4.34-7.37,18.71,18.71,0,0,1,6.95-4.71A25.26,25.26,0,0,1,256,16.88q10.64,0,16.09,6.82t5.46,20.52ZM265,36.57a12.64,12.64,0,0,0-.89-4.43A9.24,9.24,0,0,0,262,29a8.39,8.39,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61,8.61,8.61,0,0,0-6.3,2.66,11.35,11.35,0,0,0-3,7.42Z"/><path class="cls-1" d="M335.55,42.73a34.92,34.92,0,0,1-3.26,9.6,25.92,25.92,0,0,1-5.65,7.37,24.22,24.22,0,0,1-7.88,4.76,27.93,27.93,0,0,1-9.89,1.68,30.9,30.9,0,0,1-11.33-2,24.3,24.3,0,0,1-9.1-6.16,29.29,29.29,0,0,1-6-10.12,40.74,40.74,0,0,1-2.2-14,46.37,46.37,0,0,1,2-14.13A30.08,30.08,0,0,1,288,9a24.91,24.91,0,0,1,9.09-6.67,29.85,29.85,0,0,1,12-2.33,30.33,30.33,0,0,1,10.49,1.73,25,25,0,0,1,8.12,4.75,23.08,23.08,0,0,1,5.41,7.14,25.55,25.55,0,0,1,2.47,8.77h-13a14.56,14.56,0,0,0-5-8.26,13.23,13.23,0,0,0-8.4-2.94q-8.11,0-11.94,5.83t-3.82,16q0,10.36,3.78,16.1t11.33,5.73a13.43,13.43,0,0,0,9.28-3.12,16.54,16.54,0,0,0,4.81-9Z"/><path class="cls-1" d="M366.71,64a19.23,19.23,0,0,1-.75-4.11,14.86,14.86,0,0,1-5.69,3.87,21.49,21.49,0,0,1-8.21,1.45q-7.92,0-11.61-3.5a12,12,0,0,1-3.69-9.1,16.62,16.62,0,0,1,1.59-7.88,11.83,11.83,0,0,1,4.39-4.62,21,21,0,0,1,6.66-2.47c2.59-.53,5.4-1,8.45-1.44s5.1-1,6.15-1.73a3.91,3.91,0,0,0,1.59-3.5,3.9,3.9,0,0,0-2.1-3.5,10.91,10.91,0,0,0-5.64-1.26c-2.8,0-4.81.63-6,1.87A8.73,8.73,0,0,0,349.55,33H338.26a21,21,0,0,1,1.16-6.53,12.53,12.53,0,0,1,3.46-5.13,16.12,16.12,0,0,1,6.2-3.31,32.26,32.26,0,0,1,9.33-1.16,30.33,30.33,0,0,1,9.19,1.21,14.76,14.76,0,0,1,6.06,3.5A13.29,13.29,0,0,1,377,27.29,26.41,26.41,0,0,1,378,35V64Zm-.84-22.49a6.52,6.52,0,0,1-2.7,1.5A52.75,52.75,0,0,1,358,44.22q-5.22,1-7.18,2.61a5.56,5.56,0,0,0-2,4.57q0,5.13,5.88,5.13a11.7,11.7,0,0,0,4.34-.79,10.6,10.6,0,0,0,5.78-5.32,8.72,8.72,0,0,0,.89-3.87Z"/><path class="cls-1" d="M382.85,64V18.1h11.38v5.5A15,15,0,0,1,397.35,20a13.37,13.37,0,0,1,3.36-2,13,13,0,0,1,3.5-.89,35.88,35.88,0,0,1,3.64-.19h1.59V29.29a21.16,21.16,0,0,0-3.36-.28Q395,29,395,40.11V64Z"/><path class="cls-1" d="M420.91,44.22a13.14,13.14,0,0,0,3,8.3,9.26,9.26,0,0,0,7.23,3.08,10.16,10.16,0,0,0,5.27-1.35,6.11,6.11,0,0,0,2.94-3.78h12.5a20.13,20.13,0,0,1-7.46,10.91,21.18,21.18,0,0,1-12.69,3.83q-23,0-23-25a29.24,29.24,0,0,1,1.49-9.61,20.76,20.76,0,0,1,4.34-7.37,18.79,18.79,0,0,1,6.95-4.71A25.34,25.34,0,0,1,431,16.88q10.63,0,16.1,6.82t5.45,20.52ZM440,36.57a12.87,12.87,0,0,0-.88-4.43,9.24,9.24,0,0,0-2.1-3.17,8.43,8.43,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61,8.65,8.65,0,0,0-6.3,2.66,11.4,11.4,0,0,0-3,7.42Z"/></svg>
+  </div>
+  <div class="tb-div"></div>
+  <div class="tb-title">Portale Organizzazione</div>
+  <div class="tb-sp"></div>
+  <div class="tb-user" onclick="toggleMenu()">
     <div class="av" id="topAv">--</div>
-  </div>
-
-  <div class="body">
-    <nav class="side">
-      <div class="snl">Menu</div>
-      <div class="ni on" data-s="dashboard" onclick="navTo('dashboard')">
-        <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-        Dashboard
-      </div>
-      <div class="ni" data-s="eventi" onclick="navTo('eventi')">
-        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M2 6h12M6 2v4M10 2v4"/></svg>
-        Eventi
-        <span class="nib" id="evBadge">0</span>
-      </div>
-      <div class="ni" data-s="prenotazioni" onclick="navTo('prenotazioni')">
-        <svg viewBox="0 0 16 16"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/><path d="M11 7.5a2.5 2.5 0 1 0 0-5M15 14c0-2.5-1.5-4.5-4-5"/></svg>
-        Prenotazioni
-        <span class="nib" id="prenBadge">0</span>
-      </div>
-      <div class="ni" data-s="tipologie" onclick="navTo('tipologie')">
-        <svg viewBox="0 0 16 16"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
-        Tipologie
-      </div>
-      <div class="ni" data-s="slot" onclick="navTo('slot')">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
-        Slot orari
-      </div>
-      <div class="ni" data-s="documenti" onclick="navTo('documenti')">
-        <svg viewBox="0 0 16 16"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3"/></svg>
-        Documenti
-      </div>
-      <div class="ni" data-s="template" onclick="navTo('template')">
-        <svg viewBox="0 0 16 16"><path d="M2 4l6 4 6-4M2 4v8h12V4"/></svg>
-        Template email
-      </div>
-    </nav>
-
-    <div class="main">
-      <div class="subbar">
-        <div class="sb-title" id="sbTitle">Dashboard</div>
-        <button class="btn btnp" id="btnNew" onclick="openNew()" style="display:none">
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-          <span id="btnNewLabel">Nuovo</span>
-        </button>
-      </div>
-
-      <div class="ct">
-
-        <!-- DASHBOARD -->
-        <div class="sec on" id="s-dashboard">
-          <div class="kpis">
-            <div class="kpi"><div class="kl">Eventi attivi</div><div class="kv" id="kEv">—</div><div class="ks">pubblicati</div></div>
-            <div class="kpi"><div class="kl">Prenotazioni tot.</div><div class="kv" id="kPren" style="color:var(--wc)">—</div><div class="ks">confermate</div></div>
-            <div class="kpi"><div class="kl">Slot liberi</div><div class="kv" id="kSlot" style="color:#059669">—</div><div class="ks">disponibili</div></div>
-            <div class="kpi"><div class="kl">Prossimo evento</div><div class="kv" id="kNext" style="font-size:13px;line-height:1.3">—</div><div class="ks" id="kNextData">—</div></div>
-          </div>
-          <div class="card">
-            <div class="ch"><span class="ct2">Ultimi eventi</span><button class="btn btns" onclick="navTo('eventi')">Vedi tutti →</button></div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Evento</th><th>Data</th><th>Location</th><th>Prenotazioni</th><th>Slot liberi</th><th>Stato</th></tr></thead>
-                <tbody id="dashEventi"><tr><td colspan="6" class="loading">Caricamento...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- EVENTI -->
-        <div class="sec" id="s-eventi">
-          <div id="eventiList"><div class="loading">Caricamento...</div></div>
-        </div>
-
-        <!-- PRENOTAZIONI -->
-        <div class="sec" id="s-prenotazioni">
-          <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-            <select class="fs" id="filterEvento" onchange="loadPrenotazioni()" style="flex:1;min-width:200px">
-              <option value="">Tutti gli eventi</option>
-            </select>
-            <input class="fi" id="searchPren" placeholder="Cerca per nome, CF, email..." oninput="loadPrenotazioni()" style="flex:1;min-width:200px"/>
-            <select class="fs" id="filterStato" onchange="loadPrenotazioni()">
-              <option value="">Tutti gli stati</option>
-              <option value="confermata">Confermata</option>
-              <option value="cancellata">Cancellata</option>
-              <option value="in_attesa">In attesa</option>
-            </select>
-          </div>
-          <div class="card">
-            <div class="ch"><span class="ct2" id="prenTitle">Prenotazioni</span>
-              <button class="btn btns" onclick="exportCSV()">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Export CSV
-              </button>
-            </div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Nome</th><th>Cognome</th><th>Codice Fiscale</th><th>Email</th><th>Telefono</th><th>Evento</th><th>Slot</th><th>Stato</th><th></th></tr></thead>
-                <tbody id="prenBody"><tr><td colspan="9" class="loading">Caricamento...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- TIPOLOGIE -->
-        <div class="sec" id="s-tipologie">
-          <div class="card">
-            <div class="ch"><span class="ct2">Tipologie evento</span></div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Nome</th><th>Età min</th><th>Età max</th><th>Durata (min)</th><th></th></tr></thead>
-                <tbody id="tipBody"><tr><td colspan="5" class="loading">Caricamento...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- SLOT -->
-        <div class="sec" id="s-slot">
-          <div style="margin-bottom:14px">
-            <select class="fs" id="slotFilterEvento" onchange="loadSlot()" style="width:300px">
-              <option value="">Seleziona evento...</option>
-            </select>
-          </div>
-          <div class="card">
-            <div class="ch"><span class="ct2" id="slotTitle">Slot orari</span></div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Orario inizio</th><th>Orario fine</th><th>Posti totali</th><th>Occupati</th><th>Liberi</th><th></th></tr></thead>
-                <tbody id="slotBody"><tr><td colspan="6" class="empty">Seleziona un evento</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- DOCUMENTI -->
-        <div class="sec" id="s-documenti">
-          <div class="card">
-            <div class="ch"><span class="ct2">Documenti allegati</span></div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Titolo</th><th>URL</th><th>Evento</th><th></th></tr></thead>
-                <tbody id="docBody"><tr><td colspan="4" class="loading">Caricamento...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- TEMPLATE EMAIL -->
-        <div class="sec" id="s-template">
-          <div class="card">
-            <div class="ch"><span class="ct2">Template email</span></div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Nome template</th><th>Oggetto</th><th></th></tr></thead>
-                <tbody id="tmplBody"><tr><td colspan="3" class="loading">Caricamento...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div>
+    <div>
+      <div class="tb-uname" id="topName">—</div>
+      <div class="tb-urole" id="topRole">—</div>
+    </div>
+    <div class="umenu" id="uMenu">
+      <div class="umi" onclick="gestisciProfilo()">Il mio profilo</div>
+      <div class="umi-div"></div>
+      <div class="umi red" onclick="logout()">Esci</div>
     </div>
   </div>
 </div>
 
-<!-- MODAL EVENTO -->
-<div class="mbg" id="mEvento">
-  <div class="modal">
-    <div class="mh"><div class="mt" id="mEventoTitle">Nuovo evento</div><button class="mc" onclick="closeModal('mEvento')">✕</button></div>
-    <div class="mb">
-      <div class="sep">Dati principali</div>
-      <div class="fgrid">
-        <div class="fg full"><div class="fl">Titolo evento *</div><input class="fi" id="eTitle" placeholder="Es. Cologna Veneta (VR) - 2 maggio 2026"/></div>
-        <div class="fg"><div class="fl">Data *</div><input class="fi" id="eData" type="date"/></div>
-        <div class="fg"><div class="fl">Tipologia</div>
-          <select class="fs" id="eTipologia" style="width:100%"><option value="">— Nessuna —</option></select>
-        </div>
-        <div class="fg"><div class="fl">Orario inizio</div><input class="fi" id="eOrarioI" type="time" value="09:00"/></div>
-        <div class="fg"><div class="fl">Orario fine</div><input class="fi" id="eOrarioF" type="time" value="18:10"/></div>
-        <div class="fg"><div class="fl">Slot totali</div><input class="fi" id="eSlot" type="number" value="45" min="1"/></div>
-      </div>
-      <div class="sep">Luogo</div>
-      <div class="fgrid">
-        <div class="fg full"><div class="fl">Location / Nome luogo</div><input class="fi" id="eLocation" placeholder="Es. Piazza della Repubblica"/></div>
-        <div class="fg full"><div class="fl">Indirizzo completo</div><input class="fi" id="eIndirizzo" placeholder="Es. Piazza della Repubblica, 1"/></div>
-        <div class="fg"><div class="fl">Città</div><input class="fi" id="eCitta" placeholder="Es. Cologna Veneta"/></div>
-        <div class="fg"><div class="fl">Provincia</div><input class="fi" id="eProv" placeholder="Es. VR" maxlength="2"/></div>
-      </div>
-      <div class="sep">Contenuto</div>
-      <div class="fgrid">
-        <div class="fg full"><div class="fl">Descrizione pubblica</div><textarea class="fi" id="eDesc" rows="3" placeholder="Descrizione visibile agli utenti..."></textarea></div>
-        <div class="fg full"><div class="fl">Requisiti</div><textarea class="fi" id="eReq" rows="3" placeholder="Requisiti per partecipare..."></textarea></div>
-        <div class="fg"><div class="fl">Partner sanitario</div><input class="fi" id="ePartner" placeholder="Es. RED CARE"/></div>
-        <div class="fg"><div class="fl">URL foto</div><input class="fi" id="eFoto" placeholder="https://..."/></div>
-        <div class="fg full"><div class="fl">Note interne</div><textarea class="fi" id="eNote" rows="2" placeholder="Note visibili solo agli admin..."></textarea></div>
-      </div>
-      <div class="sep">Impostazioni</div>
-      <div style="display:flex;gap:12px">
-        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px">
-          <input type="checkbox" id="eAttivo" checked style="accent-color:var(--wc);width:14px;height:14px"/> Evento attivo
-        </label>
-        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px">
-          <input type="checkbox" id="eAperto" checked style="accent-color:var(--wc);width:14px;height:14px"/> Prenotazioni aperte
-        </label>
-      </div>
-    </div>
-    <div class="mf">
-      <button class="btn btns" onclick="closeModal('mEvento')">Annulla</button>
-      <button class="btn btnp" onclick="salvaEvento()">Salva evento</button>
-    </div>
+<div class="main" id="mainContent" style="display:none">
+  <div class="greeting">
+    <div class="greeting-name" id="greetName">Benvenuto</div>
+    <div class="greeting-sub" id="greetSub">Scegli uno strumento per iniziare</div>
   </div>
-</div>
 
-<!-- MODAL SLOT -->
-<div class="mbg" id="mSlot">
-  <div class="modal" style="width:480px">
-    <div class="mh"><div class="mt">Aggiungi slot orario</div><button class="mc" onclick="closeModal('mSlot')">✕</button></div>
-    <div class="mb">
-      <div class="fg"><div class="fl">Evento</div>
-        <select class="fs" id="sEvento" style="width:100%"><option value="">Seleziona evento...</option></select>
-      </div>
-      <div class="fgrid">
-        <div class="fg"><div class="fl">Orario inizio *</div><input class="fi" id="sOraI" type="time"/></div>
-        <div class="fg"><div class="fl">Orario fine *</div><input class="fi" id="sOraF" type="time"/></div>
-        <div class="fg full"><div class="fl">Posti totali *</div><input class="fi" id="sPosti" type="number" value="1" min="1"/></div>
-      </div>
-      <button class="btn btns" style="margin-top:4px;font-size:11px" onclick="aggiungiSlotBulk()">+ Genera slot automatici (ogni 10 min)</button>
-    </div>
-    <div class="mf">
-      <button class="btn btns" onclick="closeModal('mSlot')">Annulla</button>
-      <button class="btn btnp" onclick="salvaSlot()">Aggiungi slot</button>
-    </div>
-  </div>
-</div>
+  <div class="section-label">I tuoi strumenti</div>
 
-<!-- MODAL TIPOLOGIA -->
-<div class="mbg" id="mTipologia">
-  <div class="modal" style="width:440px">
-    <div class="mh"><div class="mt" id="mTipTitle">Nuova tipologia</div><button class="mc" onclick="closeModal('mTipologia')">✕</button></div>
-    <div class="mb">
-      <div class="fg"><div class="fl">Nome *</div><input class="fi" id="tNome" placeholder="Es. EV PUBBLICO 35/49 - RED CARE"/></div>
-      <div class="fgrid">
-        <div class="fg"><div class="fl">Età minima</div><input class="fi" id="tEtaMin" type="number" value="18" min="0"/></div>
-        <div class="fg"><div class="fl">Età massima</div><input class="fi" id="tEtaMax" type="number" value="99" max="120"/></div>
-        <div class="fg"><div class="fl">Durata visita (min)</div><input class="fi" id="tDurata" type="number" value="10" min="1"/></div>
-        <div class="fg"><div class="fl">Colore</div><input class="fi" id="tColore" type="color" value="#26ADE4" style="padding:4px;height:38px"/></div>
-      </div>
-    </div>
-    <div class="mf">
-      <button class="btn btns" onclick="closeModal('mTipologia')">Annulla</button>
-      <button class="btn btnp" onclick="salvaTipologia()">Salva</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DOCUMENTO -->
-<div class="mbg" id="mDocumento">
-  <div class="modal" style="width:440px">
-    <div class="mh"><div class="mt">Nuovo documento</div><button class="mc" onclick="closeModal('mDocumento')">✕</button></div>
-    <div class="mb">
-      <div class="fg"><div class="fl">Titolo *</div><input class="fi" id="dTitolo" placeholder="Es. Informativa consenso dati personali"/></div>
-      <div class="fg"><div class="fl">URL PDF *</div><input class="fi" id="dUrl" placeholder="https://..."/></div>
-      <div class="fg"><div class="fl">Evento (opzionale)</div>
-        <select class="fs" id="dEvento" style="width:100%"><option value="">— Generale —</option></select>
-      </div>
-    </div>
-    <div class="mf">
-      <button class="btn btns" onclick="closeModal('mDocumento')">Annulla</button>
-      <button class="btn btnp" onclick="salvaDocumento()">Salva</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL TEMPLATE -->
-<div class="mbg" id="mTemplate">
-  <div class="modal">
-    <div class="mh"><div class="mt" id="mTmplTitle">Nuovo template</div><button class="mc" onclick="closeModal('mTemplate')">✕</button></div>
-    <div class="mb">
-      <div class="fg"><div class="fl">Nome template *</div><input class="fi" id="tmNome" placeholder="Es. Mail di reminder prenotazione"/></div>
-      <div class="fg"><div class="fl">Oggetto email *</div><input class="fi" id="tmOggetto" placeholder="Es. Promemoria: il tuo appuntamento WelfareCare"/></div>
-      <div class="fg"><div class="fl">Corpo email</div>
-        <div style="font-size:10px;color:var(--tx3);margin-bottom:4px">Variabili disponibili: {{nome}} {{cognome}} {{data}} {{orario}} {{location}} {{codice}}</div>
-        <textarea class="fi" id="tmCorpo" rows="8" placeholder="Testo dell'email..."></textarea>
-      </div>
-    </div>
-    <div class="mf">
-      <button class="btn btns" onclick="closeModal('mTemplate')">Annulla</button>
-      <button class="btn btnp" onclick="salvaTemplate()">Salva</button>
-    </div>
+  <div class="cards-grid" id="cardsGrid">
+    <!-- Generato dinamicamente in base ai permessi -->
   </div>
 </div>
 
 <script>
-const SB_URL='https://koshtsgvfqwuhoykfqai.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
-const sb=supabase.createClient(SB_URL,SB_KEY);
-let user=null, editId=null, allEventi=[], allTipologie=[];
+const SB_URL = 'https://koshtsgvfqwuhoykfqai.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-// ── AUTH ──────────────────────────────────────────────
-async function login(){
-  const e=document.getElementById('lEmail').value.trim(),p=document.getElementById('lPwd').value;
-  const btn=document.getElementById('lBtn'),err=document.getElementById('authErr');
-  err.style.display='none'; btn.textContent='Accesso...'; btn.disabled=true;
-  const{data,error}=await sb.auth.signInWithPassword({email:e,password:p});
-  if(error){err.textContent='Credenziali non valide.';err.style.display='block';btn.textContent='Accedi';btn.disabled=false;return;}
-  await init(data.user);
+let currentUser = null;
+let currentProfilo = null;
+
+// ── DEFINIZIONE STRUMENTI ──────────────────────────────
+const TOOLS = [
+  {
+    id: 'territori',
+    name: 'Gestionale Territori',
+    desc: 'Gestisci comuni, province e regioni. Pianifica i programmi annuali degli incaricati e archivia le edizioni precedenti.',
+    url: '/territori/',
+    color: 'territori',
+    icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3.5"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`,
+    comingSoon: false
+  },
+  {
+    id: 'prenotazioni',
+    name: 'Prenotazioni',
+    desc: 'Gestisci le prenotazioni degli eventi, i calendari e le disponibilità per ogni territorio assegnato.',
+    url: '/prenotazioni/',
+    color: 'prenotazioni',
+    icon: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>`,
+    comingSoon: true
+  },
+  {
+    id: 'materiale',
+    name: 'Materiale',
+    desc: 'Accedi a documenti, moduli, presentazioni e tutto il materiale operativo necessario per gli eventi.',
+    url: '/materiale/',
+    color: 'materiale',
+    icon: `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    comingSoon: true
+  }
+];
+
+// ── AUTH ───────────────────────────────────────────────
+async function login() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pwd = document.getElementById('lPwd').value;
+  const btn = document.getElementById('lBtn');
+  const err = document.getElementById('authErr');
+  err.style.display = 'none';
+  btn.textContent = 'Accesso in corso...'; btn.disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  if (error) {
+    err.textContent = 'Credenziali non valide. Riprova.';
+    err.style.display = 'block';
+    btn.textContent = 'Accedi'; btn.disabled = false;
+    return;
+  }
+  await initApp(data.user);
 }
 
-async function init(u){
-  user=u;
-  document.getElementById('authWrap').style.display='none';
-  document.getElementById('appWrap').classList.add('on');
-  const ini=(u.email||'??').slice(0,2).toUpperCase();
-  document.getElementById('topAv').textContent=ini;
-  await loadAll();
+async function logout() {
+  await sb.auth.signOut();
+  location.reload();
 }
 
-// ── LOAD ALL ──────────────────────────────────────────
-async function loadAll(){
-  await Promise.all([loadTipologie(), loadEventi()]);
-  populateEventiSelects();
-  await loadDashboard();
+async function initApp(user) {
+  currentUser = user;
+  const { data: profilo } = await sb.from('profili').select('*').eq('id', user.id).single();
+  currentProfilo = profilo;
+
+  const nome = profilo ? `${profilo.nome||''} ${profilo.cognome||''}`.trim() || user.email : user.email;
+  const ruolo = profilo?.ruolo || 'operatore';
+  const moduli = profilo?.moduli || ['territori'];
+  const ini = nome.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '??';
+  const ora = new Date().getHours();
+  const saluto = ora < 12 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera';
+
+  document.getElementById('topAv').textContent = ini;
+  document.getElementById('topName').textContent = nome;
+  document.getElementById('topRole').textContent = ruoloLabel(ruolo);
+  document.getElementById('greetName').textContent = `${saluto}, ${profilo?.nome || nome.split(' ')[0]} 👋`;
+  document.getElementById('greetSub').textContent = `Hai accesso a ${moduli.length} strument${moduli.length===1?'o':'i'}. Cosa vuoi fare oggi?`;
+
+  // Nascondi overlay, mostra app
+  document.body.style.background = 'var(--bg)';
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('mainContent').style.display = 'block';
+
+  // Genera cards in base ai permessi
+  renderCards(moduli, ruolo);
 }
 
-async function loadTipologie(){
-  const{data}=await sb.from('tipologie_evento').select('*').order('nome');
-  allTipologie=data||[];
-  const sel=document.getElementById('eTipologia');
-  sel.innerHTML='<option value="">— Nessuna —</option>';
-  allTipologie.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.nome;sel.appendChild(o);});
-  renderTipologie();
+function ruoloLabel(r) {
+  return { superadmin:'Super amministratore', supervisore:'Supervisore', operatore:'Operatore', visualizzatore:'Visualizzatore' }[r] || r;
 }
 
-async function loadEventi(){
-  const{data}=await sb.from('eventi_prenotazioni').select('*, tipologie_evento(nome,colore)').order('data');
-  allEventi=data||[];
-  document.getElementById('evBadge').textContent=allEventi.filter(e=>e.attivo).length;
-  renderEventi();
-}
+function renderCards(moduli, ruolo) {
+  const grid = document.getElementById('cardsGrid');
+  const isSuperAdmin = ruolo === 'superadmin';
 
-function populateEventiSelects(){
-  ['filterEvento','slotFilterEvento','sEvento','dEvento'].forEach(id=>{
-    const sel=document.getElementById(id);
-    if(!sel)return;
-    const curr=sel.value;
-    const isFilter=id==='filterEvento';
-    sel.innerHTML=isFilter?'<option value="">Tutti gli eventi</option>':id==='slotFilterEvento'?'<option value="">Seleziona evento...</option>':'<option value="">— Generale —</option>';
-    allEventi.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.titolo} — ${e.data}`;sel.appendChild(o);});
-    sel.value=curr;
-  });
-}
+  grid.innerHTML = TOOLS.map(tool => {
+    const hasAccess = isSuperAdmin || moduli.includes(tool.id);
+    const locked = !hasAccess;
+    const cs = tool.comingSoon;
 
-// ── DASHBOARD ────────────────────────────────────────
-async function loadDashboard(){
-  const{data:pren}=await sb.from('prenotazioni').select('*',{count:'exact',head:true}).eq('stato','confermata');
-  const{data:slots}=await sb.from('slot_con_disponibilita').select('posti_liberi');
-  const liberi=(slots||[]).reduce((s,sl)=>s+(sl.posti_liberi||0),0);
-  document.getElementById('kEv').textContent=allEventi.filter(e=>e.attivo).length;
-  document.getElementById('kPren').textContent=pren?.length||0;
-  document.getElementById('kSlot').textContent=liberi;
-  document.getElementById('prenBadge').textContent=pren?.length||0;
-  const oggi=new Date();
-  const pross=allEventi.filter(e=>new Date(e.data)>=oggi&&e.attivo).sort((a,b)=>new Date(a.data)-new Date(b.data))[0];
-  if(pross){document.getElementById('kNext').textContent=pross.titolo.split(' ').slice(0,3).join(' ')+'...';document.getElementById('kNextData').textContent=pross.data;}
-  const{data:recenti}=await sb.from('eventi_prenotazioni').select('*').order('data').limit(6);
-  const tbody=document.getElementById('dashEventi');
-  if(!recenti?.length){tbody.innerHTML='<tr><td colspan="6" class="empty">Nessun evento</td></tr>';return;}
-  tbody.innerHTML=recenti.map(e=>`<tr onclick="navTo('eventi')" style="cursor:pointer">
-    <td><strong>${e.titolo}</strong></td>
-    <td>${e.data}</td>
-    <td style="color:var(--tx3)">${e.location||'—'}</td>
-    <td>—</td><td>—</td>
-    <td><span class="bx ${e.attivo?'bg':'bk'}">${e.attivo?'Attivo':'Inattivo'}</span></td>
-  </tr>`).join('');
-}
-
-// ── EVENTI ───────────────────────────────────────────
-function renderEventi(){
-  const div=document.getElementById('eventiList');
-  if(!allEventi.length){div.innerHTML='<div class="empty">Nessun evento. Crea il primo!</div>';return;}
-  div.innerHTML=allEventi.map(e=>{
-    const col=e.tipologie_evento?.colore||'#26ADE4';
-    return`<div class="ev-card">
-      <div class="ev-card-head">
-        <div class="ev-dot" style="background:${col}"></div>
-        <div style="flex:1">
-          <div class="ev-title">${e.titolo}</div>
-          <div class="ev-meta">${e.data} · ${e.location||'—'} · ${e.tipologie_evento?.nome||'—'}</div>
-        </div>
-        <span class="bx ${e.attivo?'bg':'bk'}">${e.attivo?'Attivo':'Inattivo'}</span>
-        <span class="bx ${e.prenotazioni_aperte?'bb':'ba'}" style="margin-left:4px">${e.prenotazioni_aperte?'Prenotazioni aperte':'Prenotazioni chiuse'}</span>
-      </div>
-      <div class="ev-foot">
-        <button class="btn btns" onclick="apriSlot('${e.id}')">
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Slot orari
-        </button>
-        <button class="btn btns" onclick="apriPrenotazioni('${e.id}')">
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Prenotazioni
-        </button>
-        <div style="flex:1"></div>
-        <button class="btn btns" onclick="editEvento('${e.id}')">✏️ Modifica</button>
-        <button class="btn btns" style="color:#dc2626" onclick="deleteEvento('${e.id}')">🗑️</button>
-      </div>
+    return `<div class="app-card ${tool.color}${locked ? ' locked' : ''}" 
+      onclick="${locked ? '' : cs ? `showComingSoon('${tool.name}')` : `openTool('${tool.url}')`}">
+      <div class="card-icon-bg">${tool.icon}</div>
+      ${cs ? `<span class="card-badge">Prossimamente</span>` : ''}
+      ${locked ? `<span class="card-badge">Accesso non consentito</span>` : ''}
+      <div class="card-name">${tool.name}</div>
+      <div class="card-desc">${tool.desc}</div>
+      ${!locked && !cs ? `
+        <div class="card-arrow">
+          <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </div>` : ''}
     </div>`;
   }).join('');
 }
 
-async function salvaEvento(){
-  const titolo=document.getElementById('eTitle').value.trim();
-  const data=document.getElementById('eData').value;
-  if(!titolo||!data){toast('Titolo e data obbligatori','error');return;}
-  const payload={
-    titolo,data,
-    orario_inizio:document.getElementById('eOrarioI').value,
-    orario_fine:document.getElementById('eOrarioF').value,
-    location:document.getElementById('eLocation').value.trim()||null,
-    indirizzo:document.getElementById('eIndirizzo').value.trim()||null,
-    citta:document.getElementById('eCitta').value.trim()||null,
-    provincia:document.getElementById('eProv').value.trim()||null,
-    descrizione:document.getElementById('eDesc').value.trim()||null,
-    requisiti:document.getElementById('eReq').value.trim()||null,
-    partner:document.getElementById('ePartner').value.trim()||null,
-    foto_url:document.getElementById('eFoto').value.trim()||null,
-    note_interne:document.getElementById('eNote').value.trim()||null,
-    slot_totali:parseInt(document.getElementById('eSlot').value)||45,
-    attivo:document.getElementById('eAttivo').checked,
-    prenotazioni_aperte:document.getElementById('eAperto').checked,
-    tipologia_id:document.getElementById('eTipologia').value||null,
-  };
-  if(editId){await sb.from('eventi_prenotazioni').update(payload).eq('id',editId);}
-  else{await sb.from('eventi_prenotazioni').insert(payload);}
-  toast(editId?'Evento aggiornato':'Evento creato','success');
-  closeModal('mEvento');
-  await loadEventi();
-  populateEventiSelects();
-  loadDashboard();
+function openTool(url) {
+  window.location.href = url;
 }
 
-function editEvento(id){
-  const e=allEventi.find(x=>x.id===id);if(!e)return;
-  editId=id;
-  document.getElementById('mEventoTitle').textContent='Modifica evento';
-  document.getElementById('eTitle').value=e.titolo||'';
-  document.getElementById('eData').value=e.data||'';
-  document.getElementById('eOrarioI').value=e.orario_inizio||'09:00';
-  document.getElementById('eOrarioF').value=e.orario_fine||'18:10';
-  document.getElementById('eLocation').value=e.location||'';
-  document.getElementById('eIndirizzo').value=e.indirizzo||'';
-  document.getElementById('eCitta').value=e.citta||'';
-  document.getElementById('eProv').value=e.provincia||'';
-  document.getElementById('eDesc').value=e.descrizione||'';
-  document.getElementById('eReq').value=e.requisiti||'';
-  document.getElementById('ePartner').value=e.partner||'';
-  document.getElementById('eFoto').value=e.foto_url||'';
-  document.getElementById('eNote').value=e.note_interne||'';
-  document.getElementById('eSlot').value=e.slot_totali||45;
-  document.getElementById('eAttivo').checked=e.attivo;
-  document.getElementById('eAperto').checked=e.prenotazioni_aperte;
-  document.getElementById('eTipologia').value=e.tipologia_id||'';
-  document.getElementById('mEvento').classList.add('on');
+function showComingSoon(name) {
+  toast(`${name} — disponibile prossimamente`, '');
 }
 
-async function deleteEvento(id){
-  if(!confirm('Eliminare questo evento? Verranno eliminate anche tutte le prenotazioni associate.'))return;
-  await sb.from('eventi_prenotazioni').delete().eq('id',id);
-  toast('Evento eliminato','success');
-  await loadEventi();
-  loadDashboard();
+function gestisciProfilo() {
+  toast('Gestione profilo — prossimamente', '');
+  document.getElementById('uMenu').classList.remove('on');
 }
 
-// ── PRENOTAZIONI ────────────────────────────────────
-async function loadPrenotazioni(){
-  const evId=document.getElementById('filterEvento').value;
-  const stato=document.getElementById('filterStato').value;
-  const q=document.getElementById('searchPren').value.toLowerCase();
-  let query=sb.from('prenotazioni').select('*, eventi_prenotazioni(titolo,data), slot_orari(orario_inizio,orario_fine)').order('created_at',{ascending:false});
-  if(evId)query=query.eq('evento_id',evId);
-  if(stato)query=query.eq('stato',stato);
-  const{data}=await query;
-  const filtered=(data||[]).filter(p=>!q||(p.nome+p.cognome+p.codice_fiscale+p.email).toLowerCase().includes(q));
-  document.getElementById('prenTitle').textContent=`Prenotazioni (${filtered.length})`;
-  const tbody=document.getElementById('prenBody');
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" class="empty">Nessuna prenotazione</td></tr>';return;}
-  tbody.innerHTML=filtered.map(p=>`<tr>
-    <td><strong>${p.nome}</strong></td>
-    <td>${p.cognome}</td>
-    <td><span class="pren-cf">${p.codice_fiscale}</span></td>
-    <td style="color:var(--tx3)">${p.email}</td>
-    <td style="color:var(--tx3)">${p.telefono||'—'}</td>
-    <td style="font-size:11px">${p.eventi_prenotazioni?.titolo||'—'}</td>
-    <td style="font-size:11px;white-space:nowrap">${p.slot_orari?p.slot_orari.orario_inizio+'–'+p.slot_orari.orario_fine:'—'}</td>
-    <td><span class="bx ${p.stato==='confermata'?'bg':p.stato==='cancellata'?'br':'ba'}">${p.stato}</span></td>
-    <td><button class="btn btns" style="font-size:10px;padding:3px 8px;color:#dc2626" onclick="cancellaPrenotazione('${p.id}')">Cancella</button></td>
-  </tr>`).join('');
+function toggleMenu() {
+  document.getElementById('uMenu').classList.toggle('on');
 }
 
-async function cancellaPrenotazione(id){
-  if(!confirm('Cancellare questa prenotazione?'))return;
-  await sb.from('prenotazioni').update({stato:'cancellata'}).eq('id',id);
-  toast('Prenotazione cancellata','success');
-  loadPrenotazioni();
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type||'');
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.style.display='none', 3200);
 }
 
-function exportCSV(){
-  const rows=document.querySelectorAll('#prenBody tr');
-  let csv='Nome,Cognome,Codice Fiscale,Email,Telefono,Evento,Slot,Stato\n';
-  rows.forEach(r=>{
-    const tds=[...r.querySelectorAll('td')];
-    if(tds.length<8)return;
-    csv+=tds.slice(0,8).map(td=>'"'+(td.textContent||'').trim().replace(/"/g,'""')+'"').join(',')+'\n';
-  });
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='prenotazioni.csv'; a.click();
-}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.tb-user')) document.getElementById('uMenu').classList.remove('on');
+});
+document.getElementById('lPwd').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 
-// ── SLOT ─────────────────────────────────────────────
-async function loadSlot(){
-  const evId=document.getElementById('slotFilterEvento').value;
-  if(!evId){document.getElementById('slotBody').innerHTML='<tr><td colspan="6" class="empty">Seleziona un evento</td></tr>';return;}
-  const{data}=await sb.from('slot_con_disponibilita').select('*').eq('evento_id',evId).order('orario_inizio');
-  const ev=allEventi.find(e=>e.id===evId);
-  document.getElementById('slotTitle').textContent=`Slot — ${ev?.titolo||''}`;
-  const tbody=document.getElementById('slotBody');
-  if(!data?.length){tbody.innerHTML='<tr><td colspan="6" class="empty">Nessuno slot. Aggiungine uno!</td></tr>';return;}
-  tbody.innerHTML=data.map(s=>`<tr>
-    <td><strong>${s.orario_inizio}</strong></td>
-    <td>${s.orario_fine}</td>
-    <td>${s.posti_totali}</td>
-    <td>${s.posti_occupati||0}</td>
-    <td><strong style="color:${(s.posti_liberi||0)>0?'#059669':'#dc2626'}">${s.posti_liberi||0}</strong></td>
-    <td><button class="btn btns" style="font-size:10px;padding:3px 8px;color:#dc2626" onclick="deleteSlot('${s.id}')">✕</button></td>
-  </tr>`).join('');
-}
-
-async function salvaSlot(){
-  const evId=document.getElementById('sEvento').value;
-  const oraI=document.getElementById('sOraI').value;
-  const oraF=document.getElementById('sOraF').value;
-  const posti=parseInt(document.getElementById('sPosti').value)||1;
-  if(!evId||!oraI||!oraF){toast('Tutti i campi sono obbligatori','error');return;}
-  await sb.from('slot_orari').insert({evento_id:evId,orario_inizio:oraI,orario_fine:oraF,posti_totali:posti});
-  toast('Slot aggiunto','success');
-  closeModal('mSlot');
-  document.getElementById('slotFilterEvento').value=evId;
-  loadSlot();
-}
-
-async function aggiungiSlotBulk(){
-  const evId=document.getElementById('sEvento').value;
-  if(!evId){toast('Seleziona un evento','error');return;}
-  const ev=allEventi.find(e=>e.id===evId);
-  if(!ev){return;}
-  const[hI,mI]=ev.orario_inizio.split(':').map(Number);
-  const[hF,mF]=ev.orario_fine.split(':').map(Number);
-  const totMin=(hF*60+mF)-(hI*60+mI);
-  const numSlot=Math.floor(totMin/10);
-  const slots=[];
-  for(let i=0;i<numSlot;i++){
-    const startMin=hI*60+mI+i*10;
-    const endMin=startMin+10;
-    const fmt=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-    slots.push({evento_id:evId,orario_inizio:fmt(startMin),orario_fine:fmt(endMin),posti_totali:1});
-  }
-  await sb.from('slot_orari').insert(slots);
-  toast(`${slots.length} slot generati automaticamente`,'success');
-  closeModal('mSlot');
-  document.getElementById('slotFilterEvento').value=evId;
-  loadSlot();
-}
-
-async function deleteSlot(id){
-  if(!confirm('Eliminare questo slot?'))return;
-  await sb.from('slot_orari').delete().eq('id',id);
-  toast('Slot eliminato','success');
-  loadSlot();
-}
-
-// ── TIPOLOGIE ────────────────────────────────────────
-function renderTipologie(){
-  const tbody=document.getElementById('tipBody');
-  if(!allTipologie.length){tbody.innerHTML='<tr><td colspan="5" class="empty">Nessuna tipologia</td></tr>';return;}
-  tbody.innerHTML=allTipologie.map(t=>`<tr>
-    <td><span style="display:inline-flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:50%;background:${t.colore||'#26ADE4'};display:inline-block"></span><strong>${t.nome}</strong></span></td>
-    <td>${t.eta_min}</td><td>${t.eta_max}</td><td>${t.durata_minuti} min</td>
-    <td><button class="btn btns" style="font-size:10px;padding:3px 8px;color:#dc2626" onclick="deleteTipologia('${t.id}')">✕</button></td>
-  </tr>`).join('');
-}
-
-async function salvaTipologia(){
-  const nome=document.getElementById('tNome').value.trim();
-  if(!nome){toast('Nome obbligatorio','error');return;}
-  const payload={nome,eta_min:parseInt(document.getElementById('tEtaMin').value)||18,eta_max:parseInt(document.getElementById('tEtaMax').value)||99,durata_minuti:parseInt(document.getElementById('tDurata').value)||10,colore:document.getElementById('tColore').value};
-  if(editId)await sb.from('tipologie_evento').update(payload).eq('id',editId);
-  else await sb.from('tipologie_evento').insert(payload);
-  toast('Tipologia salvata','success');
-  closeModal('mTipologia');
-  await loadTipologie();
-}
-
-async function deleteTipologia(id){
-  if(!confirm('Eliminare?'))return;
-  await sb.from('tipologie_evento').delete().eq('id',id);
-  toast('Eliminata','success');
-  await loadTipologie();
-}
-
-// ── DOCUMENTI ────────────────────────────────────────
-async function loadDocumenti(){
-  const{data}=await sb.from('documenti_evento').select('*, eventi_prenotazioni(titolo)').order('created_at',{ascending:false});
-  const tbody=document.getElementById('docBody');
-  if(!data?.length){tbody.innerHTML='<tr><td colspan="4" class="empty">Nessun documento</td></tr>';return;}
-  tbody.innerHTML=data.map(d=>`<tr>
-    <td><strong>${d.titolo}</strong></td>
-    <td><a href="${d.url}" target="_blank" style="color:var(--wc);font-size:11px">${d.url.length>50?d.url.slice(0,50)+'...':d.url}</a></td>
-    <td style="color:var(--tx3)">${d.eventi_prenotazioni?.titolo||'Generale'}</td>
-    <td><button class="btn btns" style="font-size:10px;padding:3px 8px;color:#dc2626" onclick="deleteDocumento('${d.id}')">✕</button></td>
-  </tr>`).join('');
-}
-
-async function salvaDocumento(){
-  const titolo=document.getElementById('dTitolo').value.trim();
-  const url=document.getElementById('dUrl').value.trim();
-  if(!titolo||!url){toast('Titolo e URL obbligatori','error');return;}
-  await sb.from('documenti_evento').insert({titolo,url,evento_id:document.getElementById('dEvento').value||null});
-  toast('Documento salvato','success');
-  closeModal('mDocumento');
-  loadDocumenti();
-}
-
-async function deleteDocumento(id){
-  if(!confirm('Eliminare?'))return;
-  await sb.from('documenti_evento').delete().eq('id',id);
-  toast('Eliminato','success');
-  loadDocumenti();
-}
-
-// ── TEMPLATE EMAIL ────────────────────────────────────
-async function loadTemplate(){
-  const{data}=await sb.from('template_email').select('*').order('created_at',{ascending:false});
-  const tbody=document.getElementById('tmplBody');
-  if(!data?.length){tbody.innerHTML='<tr><td colspan="3" class="empty">Nessun template</td></tr>';return;}
-  tbody.innerHTML=data.map(t=>`<tr>
-    <td><strong>${t.nome}</strong></td>
-    <td style="color:var(--tx3)">${t.oggetto}</td>
-    <td>
-      <button class="btn btns" style="font-size:10px;padding:3px 8px" onclick="editTemplate('${t.id}')">✏️</button>
-      <button class="btn btns" style="font-size:10px;padding:3px 8px;color:#dc2626" onclick="deleteTemplate('${t.id}')">✕</button>
-    </td>
-  </tr>`).join('');
-}
-
-async function salvaTemplate(){
-  const nome=document.getElementById('tmNome').value.trim();
-  const oggetto=document.getElementById('tmOggetto').value.trim();
-  if(!nome||!oggetto){toast('Nome e oggetto obbligatori','error');return;}
-  const payload={nome,oggetto,corpo:document.getElementById('tmCorpo').value.trim()};
-  if(editId)await sb.from('template_email').update(payload).eq('id',editId);
-  else await sb.from('template_email').insert(payload);
-  toast('Template salvato','success');
-  closeModal('mTemplate');
-  loadTemplate();
-}
-
-async function editTemplate(id){
-  const{data}=await sb.from('template_email').select('*').eq('id',id).single();
-  editId=id;
-  document.getElementById('mTmplTitle').textContent='Modifica template';
-  document.getElementById('tmNome').value=data.nome||'';
-  document.getElementById('tmOggetto').value=data.oggetto||'';
-  document.getElementById('tmCorpo').value=data.corpo||'';
-  document.getElementById('mTemplate').classList.add('on');
-}
-
-async function deleteTemplate(id){
-  if(!confirm('Eliminare?'))return;
-  await sb.from('template_email').delete().eq('id',id);
-  toast('Eliminato','success');
-  loadTemplate();
-}
-
-// ── NAVIGATION ───────────────────────────────────────
-const NAV={dashboard:'Dashboard',eventi:'Eventi',prenotazioni:'Prenotazioni',tipologie:'Tipologie',slot:'Slot orari',documenti:'Documenti',template:'Template email'};
-const NAV_NEW={eventi:'Nuovo evento',tipologie:'Nuova tipologia',slot:'Nuovo slot',documenti:'Nuovo documento',template:'Nuovo template'};
-
-function navTo(id){
-  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.s===id));
-  document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id==='s-'+id));
-  document.getElementById('sbTitle').textContent=NAV[id]||id;
-  const btnNew=document.getElementById('btnNew');
-  if(NAV_NEW[id]){btnNew.style.display='';document.getElementById('btnNewLabel').textContent=NAV_NEW[id];}
-  else btnNew.style.display='none';
-  if(id==='prenotazioni')loadPrenotazioni();
-  if(id==='slot')loadSlot();
-  if(id==='documenti')loadDocumenti();
-  if(id==='template')loadTemplate();
-}
-
-function openNew(){
-  editId=null;
-  const sec=document.querySelector('.sec.on').id.replace('s-','');
-  if(sec==='eventi'){document.getElementById('mEventoTitle').textContent='Nuovo evento';['eTitle','eIndirizzo','eCitta','eProv','eDesc','eReq','ePartner','eFoto','eNote','eLocation'].forEach(id=>document.getElementById(id).value='');document.getElementById('eData').value='';document.getElementById('eSlot').value=45;document.getElementById('eAttivo').checked=true;document.getElementById('eAperto').checked=true;document.getElementById('eTipologia').value='';document.getElementById('mEvento').classList.add('on');}
-  else if(sec==='tipologie'){document.getElementById('mTipTitle').textContent='Nuova tipologia';['tNome'].forEach(id=>document.getElementById(id).value='');document.getElementById('tEtaMin').value=18;document.getElementById('tEtaMax').value=99;document.getElementById('tDurata').value=10;document.getElementById('tColore').value='#26ADE4';document.getElementById('mTipologia').classList.add('on');}
-  else if(sec==='slot'){document.getElementById('sOraI').value='';document.getElementById('sOraF').value='';document.getElementById('sPosti').value=1;document.getElementById('mSlot').classList.add('on');}
-  else if(sec==='documenti'){['dTitolo','dUrl'].forEach(id=>document.getElementById(id).value='');document.getElementById('mDocumento').classList.add('on');}
-  else if(sec==='template'){document.getElementById('mTmplTitle').textContent='Nuovo template';['tmNome','tmOggetto','tmCorpo'].forEach(id=>document.getElementById(id).value='');document.getElementById('mTemplate').classList.add('on');}
-}
-
-function apriSlot(evId){navTo('slot');document.getElementById('slotFilterEvento').value=evId;loadSlot();}
-function apriPrenotazioni(evId){navTo('prenotazioni');document.getElementById('filterEvento').value=evId;loadPrenotazioni();}
-
-function closeModal(id){document.getElementById(id).classList.remove('on');editId=null;}
-document.querySelectorAll('.mbg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
-document.getElementById('lPwd').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-
-function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3200);}
-
-(async()=>{const{data:{session}}=await sb.auth.getSession();if(session)await init(session.user);})();
+// ── INIT ──────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { document.body.style.background='var(--bg)'; await initApp(session.user); }
+})();
 </script>
 </body>
 </html>
