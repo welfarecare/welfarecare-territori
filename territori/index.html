@@ -307,8 +307,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
             <div class="ch"><span class="ct2">Ultimi territori aggiunti</span><button class="btn btns" onclick="navTo('terr')">Vedi tutti →</button></div>
             <div class="ts">
               <table class="tbl">
-                <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Popolazione</th><th>P.IVA</th><th>Incaricato</th></tr></thead>
-                <tbody id="dashTb"><tr><td colspan="7" class="loading">Caricamento...</td></tr></tbody>
+                <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Incaricato</th></tr></thead>
+                <tbody id="dashTb"><tr><td colspan="5" class="loading">Caricamento...</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -697,7 +697,7 @@ async function loadDash(){
   document.getElementById('kPiva').textContent=piva.toLocaleString('it-IT');
   document.getElementById('terrBadge').textContent=data.length;
   const tb=document.getElementById('dashTb');
-  tb.innerHTML=data.slice(0,8).map(t=>`<tr onclick="apriScheda('${t.id}')"><td><strong>${t.comune}</strong></td><td>${t.provincia}</td><td>${t.regione}</td><td>${t.cap||'—'}</td><td>${t.popolazione?t.popolazione.toLocaleString('it-IT'):'—'}</td><td>${t.numero_piva||'—'}</td><td>${t.profili?`${t.profili.nome||''} ${t.profili.cognome||''}`.trim():'—'}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">Nessun territorio</td></tr>';
+  tb.innerHTML=data.slice(0,8).map(t=>`<tr onclick="apriScheda('${t.id}')"><td><strong>${t.comune}</strong></td><td>${t.provincia}</td><td>${t.regione}</td><td>${t.cap||'—'}</td><td>${t.profili?`${t.profili.nome||''} ${t.profili.cognome||''}`.trim():'—'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nessun territorio</td></tr>';
 }
 
 async function loadTerritori(){
@@ -1511,7 +1511,7 @@ async function loadArchivio() {
         <div class="card" style="margin:0 0 4px 0">
           <div class="ts">
             <table class="tbl">
-              <thead><tr><th>#</th><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Popolazione</th><th>P.IVA</th><th>Incaricato</th><th></th></tr></thead>
+              <thead><tr><th>#</th><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Incaricato</th><th></th></tr></thead>
               <tbody>
                 ${items.map(r => {
                   const nome = r.profili ? `${r.profili.nome||''} ${r.profili.cognome||''}`.trim() : '—';
