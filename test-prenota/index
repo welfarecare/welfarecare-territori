@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WelfareCare — Prenota il tuo appuntamento</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --wc:#26ADE4;--wcd:#1a8fc2;--wcl:#e8f6fc;
+  --bg:#f0f4f8;--sur:#fff;--sur2:#f7f9fb;
+  --bd:rgba(0,0,0,.07);--bd2:rgba(0,0,0,.12);
+  --tx:#0d1117;--tx2:#4a5568;--tx3:#94a3b8;
+  --f:'Poppins',sans-serif;--r:12px;--rl:18px;
+}
+body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--sur);border-bottom:1px solid var(--bd);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;flex-direction:column;align-items:center;gap:2px}
+.logo svg{width:160px;height:auto}
+.logo-sub{font-size:9px;font-weight:600;color:var(--tx3);letter-spacing:.12em;text-transform:uppercase}
+.btn-accedi{font-family:var(--f);font-size:12px;font-weight:500;padding:8px 16px;border-radius:var(--r);cursor:pointer;border:1px solid var(--wc);background:transparent;color:var(--wc);transition:all .15s}
+.btn-accedi:hover{background:var(--wcl)}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0d1117 0%,#1a2744 60%,#0e3a5c 100%);padding:56px 24px;text-align:center;color:#fff}
+.hero-title{font-size:32px;font-weight:700;margin-bottom:12px;line-height:1.2}
+.hero-title span{color:var(--wc)}
+.hero-sub{font-size:15px;color:rgba(255,255,255,.6);max-width:540px;margin:0 auto}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:40px 20px}
+.section-title{font-size:22px;font-weight:700;color:var(--tx);margin-bottom:24px;text-align:center}
+
+/* EVENT CARDS */
+.events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+.ev-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;transition:all .2s;cursor:pointer}
+.ev-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.1)}
+.ev-img{width:100%;height:160px;object-fit:cover;background:linear-gradient(135deg,var(--wcl),var(--wcm))}
+.ev-img-placeholder{width:100%;height:160px;background:linear-gradient(135deg,#e8f6fc,#b3e2f5);display:flex;align-items:center;justify-content:center}
+.ev-img-placeholder svg{width:48px;height:48px;stroke:var(--wc);fill:none;opacity:.5}
+.ev-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:#d1fae5;color:#065f46}
+.ev-badge.chiuso{background:#fee2e2;color:#dc2626}
+.ev-head{padding:16px}
+.ev-title{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:6px}
+.ev-meta{font-size:12px;color:var(--tx3);margin-bottom:12px}
+.ev-meta strong{color:var(--tx2)}
+.ev-foot{padding:12px 16px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.ev-gratuito{font-size:12px;font-weight:500;color:var(--tx3)}
+.btn-prenota{font-family:var(--f);font-size:13px;font-weight:600;padding:10px 20px;border-radius:var(--r);cursor:pointer;border:none;background:var(--wc);color:#fff;transition:all .15s}
+.btn-prenota:hover{background:var(--wcd);transform:translateY(-1px)}
+.btn-prenota:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* MODAL CF */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
+.mbg.on{display:flex}
+.modal{background:var(--sur);border-radius:var(--rl);width:480px;max-width:100%;border:1px solid var(--bd);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.mh{padding:20px 24px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.mt{font-size:16px;font-weight:700;color:var(--tx)}
+.mc{background:none;border:none;font-size:22px;color:var(--tx3);cursor:pointer;line-height:1}
+.mc:hover{color:var(--tx)}
+.mb{padding:24px}
+.mf{padding:16px 24px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end}
+
+/* FORM */
+.fi{font-family:var(--f);font-size:13px;padding:12px 14px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--wc)}
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fl{font-size:12px;font-weight:500;color:var(--tx2)}
+.ferr{font-size:11px;color:#dc2626;margin-top:2px;display:none}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid .full{grid-column:1/-1}
+.btn-main{font-family:var(--f);font-size:13px;font-weight:600;padding:12px 24px;border-radius:var(--r);cursor:pointer;border:none;background:var(--wc);color:#fff;transition:all .15s}
+.btn-main:hover{background:var(--wcd)}
+.btn-sec{font-family:var(--f);font-size:13px;font-weight:500;padding:12px 20px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx2);transition:all .15s}
+.btn-sec:hover{background:var(--sur2)}
+
+/* EVENTO DETAIL */
+.detail-wrap{display:none;max-width:900px;margin:0 auto;padding:32px 20px}
+.detail-wrap.on{display:block}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tx3);cursor:pointer;margin-bottom:24px;border:none;background:none;font-family:var(--f);padding:6px 0;transition:color .15s}
+.back-btn:hover{color:var(--tx)}
+.back-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.detail-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:20px}
+.detail-head{background:linear-gradient(135deg,var(--wc),var(--wcd));padding:28px;color:#fff}
+.detail-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.detail-meta{font-size:13px;opacity:.85}
+.detail-body{padding:24px}
+.detail-section{margin-bottom:20px}
+.detail-section h3{font-size:13px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.detail-text{font-size:13px;color:var(--tx2);line-height:1.7}
+.req-list{list-style:none;padding:0}
+.req-list li{font-size:13px;color:var(--tx2);padding:6px 0;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.req-list li:last-child{border-bottom:none}
+.req-list li::before{content:"•";color:var(--wc);font-weight:700;flex-shrink:0}
+
+/* SLOT SELECTION */
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
+.slot-btn{font-family:var(--f);font-size:12px;font-weight:500;padding:10px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bd2);background:var(--sur);color:var(--tx);transition:all .15s;text-align:center}
+.slot-btn:hover:not(:disabled){border-color:var(--wc);background:var(--wcl);color:var(--wcd)}
+.slot-btn.selected{border-color:var(--wc);background:var(--wc);color:#fff}
+.slot-btn:disabled{opacity:.4;cursor:not-allowed;background:var(--sur2)}
+.slot-liberi{font-size:10px;margin-top:3px;opacity:.7}
+
+/* CONFERMA */
+.conferma-card{background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:1px solid #6ee7b7;border-radius:var(--rl);padding:32px;text-align:center;margin:24px 0}
+.conferma-icon{font-size:48px;margin-bottom:12px}
+.conferma-title{font-size:20px;font-weight:700;color:#065f46;margin-bottom:8px}
+.conferma-sub{font-size:14px;color:#047857;margin-bottom:16px}
+.conferma-code{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.6);border-radius:var(--r);padding:10px 16px;font-family:monospace;font-size:16px;font-weight:700;color:#065f46;letter-spacing:.1em}
+
+/* ACCESSO PRENOTAZIONE */
+.accesso-wrap{max-width:480px;margin:40px auto;padding:0 20px}
+
+/* LOADING */
+.loading{text-align:center;padding:40px;color:var(--tx3);font-size:14px}
+.empty{text-align:center;padding:48px 20px;color:var(--tx3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;padding:12px 20px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap}
+.toast.success{background:#059669}.toast.error{background:#dc2626}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo" onclick="showHome()" style="cursor:pointer">
+    <svg viewBox="0 0 453 67" xmlns="http://www.w3.org/2000/svg">
+      <polygon fill="#26ADE4" points="49,64 39.5,23.7 29.7,64 17.5,64 0,2 13.8,2 24,42.2 32.6,2 46.2,2 55.6,42.2 65.7,2 78.9,2 61.6,64"/>
+      <path fill="#26ADE4" d="M85.5,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H85.5z"/>
+      <rect fill="#26ADE4" x="120.9" y="1.3" width="12.1" height="62.7"/>
+      <path fill="#26ADE4" d="M142.5,64V26.7h-6.8V18.1h6.8C142.5,6.9,149,1.3,162,1.3v9.8c-1.6,0-2.8.1-3.8.3s-1.7.6-2.3,1.2-.9,1.3-1.2,2.2-.3,2-.3,3.3h7.8v8.6h-7.8V64H142.5z"/>
+      <path fill="#26ADE4" d="M335.5,42.7c-.7,3.5-1.8,6.8-3.3,9.6s-3.4,5.3-5.6,7.4-4.9,3.6-7.9,4.8-6.3,1.7-9.9,1.7c-4,0-7.8-.7-11.3-2.1s-6.6-3.4-9.1-6.2-4.6-6.1-6-10.1-2.2-8.7-2.2-14c0-5.2.7-9.9,2-14.1s3.2-7.7,5.7-10.6,5.5-5.1,9.1-6.7S304.6,0,309.1,0c3.9,0,7.4.6,10.5,1.7s5.9,2.7,8.1,4.8,4.1,4.4,5.4,7.1,2.2,5.7,2.5,8.8h-13c-.9-3.6-2.6-6.3-5-8.3s-5.3-2.9-8.4-2.9c-5.4,0-9.4,1.9-11.9,5.8s-3.8,9.2-3.8,16c0,6.9,1.3,12.3,3.8,16.1s6.3,5.7,11.3,5.7c3.9,0,7-1,9.3-3.1s3.9-5.1,4.8-9H335.5z"/>
+      <path fill="#26ADE4" d="M382.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H382.8z"/>
+      <path fill="#26ADE4" d="M420.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H420.9z"/>
+    </svg>
+    <span class="logo-sub">Società Benefit</span>
+  </div>
+  <button class="btn-accedi" onclick="showAccesso()">← Accedi alla tua prenotazione</button>
+</div>
+
+<!-- HOME -->
+<div id="homeView">
+  <div class="hero">
+    <div class="hero-title">Prenota il tuo<br><span>appuntamento gratuito</span></div>
+    <div class="hero-sub">Scegli l'evento più vicino a te e prenota il tuo slot per una visita di prevenzione completamente gratuita.</div>
+  </div>
+  <div class="main">
+    <div class="section-title">Eventi disponibili</div>
+    <div class="events-grid" id="eventsGrid">
+      <div class="loading">Caricamento eventi...</div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL EVENTO -->
+<div class="detail-wrap" id="detailView">
+  <button class="back-btn" onclick="showHome()">
+    <svg viewBox="0 0 16 16"><path d="M10 12L6 8l4-4"/></svg>
+    Torna agli eventi
+  </button>
+  <div id="detailContent"></div>
+</div>
+
+<!-- ACCESSO PRENOTAZIONE -->
+<div style="display:none" id="accessoView">
+  <div class="hero" style="padding:36px 24px">
+    <div class="hero-title" style="font-size:24px">Accedi alla tua prenotazione</div>
+    <div class="hero-sub">Inserisci il tuo codice fiscale per visualizzare o modificare la tua prenotazione.</div>
+  </div>
+  <div class="accesso-wrap">
+    <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:28px">
+      <div class="fg"><div class="fl">Codice fiscale</div><input class="fi" id="accessoCf" placeholder="RSSMRA80A01..." style="text-transform:uppercase"/></div>
+      <button class="btn-main" style="width:100%;margin-top:4px" onclick="cercaPrenotazione()">Cerca prenotazione</button>
+      <div id="accessoResult" style="margin-top:20px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CODICE FISCALE -->
+<div class="mbg" id="mCf">
+  <div class="modal">
+    <div class="mh">
+      <div class="mt">Controllo codice fiscale</div>
+      <button class="mc" onclick="closeM('mCf')">✕</button>
+    </div>
+    <div class="mb">
+      <p style="font-size:13px;color:var(--tx3);margin-bottom:20px">Inserisci il tuo codice fiscale per visualizzare questo evento.</p>
+      <div class="fg">
+        <div class="fl">CODICE FISCALE</div>
+        <input class="fi" id="cfInput" placeholder="Es. RSSMRA80A01H501A" style="text-transform:uppercase;font-size:15px;letter-spacing:.05em"/>
+        <div class="ferr" id="cfErr">Codice fiscale non valido o non idoneo per questo evento.</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeM('mCf')">Annulla</button>
+      <button class="btn-main" onclick="verificaCf()">Invia</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PRENOTAZIONE -->
+<div class="mbg" id="mPrenota">
+  <div class="modal" style="width:540px;max-height:90vh;overflow-y:auto">
+    <div class="mh" style="position:sticky;top:0;background:var(--sur);z-index:1">
+      <div class="mt">Prenota il tuo appuntamento</div>
+      <button class="mc" onclick="closeM('mPrenota')">✕</button>
+    </div>
+    <div class="mb">
+      <div style="background:var(--wcl);border-radius:var(--r);padding:12px 14px;margin-bottom:20px;font-size:12px;color:var(--wcd)">
+        <strong>⚠️ Attenzione:</strong> inserisci correttamente la tua mail al momento della prenotazione, altrimenti non riceverai conferma dell'appuntamento via mail.
+      </div>
+      <div id="slotSelectWrap">
+        <div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:10px">Seleziona il tuo orario:</div>
+        <div class="slot-grid" id="slotGrid"></div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:10px">Slot selezionato: <strong id="slotSelLabel">—</strong></div>
+      </div>
+      <div style="height:1px;background:var(--bd);margin:20px 0"></div>
+      <div class="fgrid">
+        <div class="fg"><div class="fl">Nome *</div><input class="fi" id="pNome" placeholder="Mario"/></div>
+        <div class="fg"><div class="fl">Cognome *</div><input class="fi" id="pCognome" placeholder="Rossi"/></div>
+        <div class="fg full"><div class="fl">Codice fiscale *</div><input class="fi" id="pCf" placeholder="RSSMRA80A01H501A" style="text-transform:uppercase"/></div>
+        <div class="fg full"><div class="fl">Email *</div><input class="fi" id="pEmail" type="email" placeholder="mario.rossi@email.it"/></div>
+        <div class="fg"><div class="fl">Telefono</div><input class="fi" id="pTel" type="tel" placeholder="+39 340 1234567"/></div>
+        <div class="fg"><div class="fl">Data di nascita</div><input class="fi" id="pDdn" type="date"/></div>
+        <div class="fg full"><div class="fl">Note (opzionale)</div><input class="fi" id="pNote" placeholder="Es. disabilità motorie, esigenze particolari..."/></div>
+      </div>
+      <div style="background:var(--sur2);border-radius:var(--r);padding:12px;font-size:11px;color:var(--tx3);margin-top:8px">
+        Al termine della registrazione scarica l'informativa sulla privacy da portare stampata o compilata il giorno dell'evento.
+      </div>
+    </div>
+    <div class="mf" style="position:sticky;bottom:0;background:var(--sur)">
+      <button class="btn-sec" onclick="closeM('mPrenota')">Annulla</button>
+      <button class="btn-main" onclick="confermaPrenotazione()" id="btnConferma">Conferma prenotazione</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://koshtsgvfqwuhoykfqai.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let eventoCorrente=null, cfVerificato=null, slotSelezionato=null;
+
+// ── INIT ──────────────────────────────────────────────
+async function init(){
+  await loadEventi();
+  // Check URL params
+  const params=new URLSearchParams(location.search);
+  if(params.get('accedi'))showAccesso();
+}
+
+// ── EVENTI ───────────────────────────────────────────
+async function loadEventi(){
+  const{data}=await sb.from('eventi_prenotazioni')
+    .select('*,tipologie_evento(nome,colore,eta_min,eta_max)')
+    .eq('attivo',true)
+    .order('data');
+  const grid=document.getElementById('eventsGrid');
+  if(!data?.length){grid.innerHTML='<div class="empty"><div class="empty-icon">📅</div><div>Nessun evento disponibile al momento.<br>Torna presto per nuovi appuntamenti!</div></div>';return;}
+  grid.innerHTML=data.map(e=>`
+    <div class="ev-card" onclick="apriEvento('${e.id}')">
+      ${e.foto_url?`<img src="${e.foto_url}" alt="${e.titolo}" class="ev-img" onerror="this.style.display='none'">`
+        :`<div class="ev-img-placeholder"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>`}
+      <div class="ev-head">
+        <div style="margin-bottom:10px">
+          <span class="ev-badge ${!e.prenotazioni_aperte?'chiuso':''}">
+            ${e.prenotazioni_aperte?'● Prenotazioni aperte':'Prenotazioni chiuse'}
+          </span>
+        </div>
+        <div class="ev-title">${e.titolo}</div>
+        <div class="ev-meta">
+          <strong>${formatData(e.data)}, ${e.orario_inizio?.slice(0,5)||'09:00'} - ${e.orario_fine?.slice(0,5)||'18:00'}</strong><br>
+          📍 ${e.citta||''} ${e.provincia?`(${e.provincia})`:''}
+          ${e.tipologie_evento?`<br>👥 ${e.tipologie_evento.eta_min}-${e.tipologie_evento.eta_max} anni`:''}
+        </div>
+      </div>
+      <div class="ev-foot">
+        <span class="ev-gratuito">L'evento è completamente gratuito</span>
+        <button class="btn-prenota" ${!e.prenotazioni_aperte?'disabled':''} onclick="event.stopPropagation();apriEvento('${e.id}')">
+          ${e.prenotazioni_aperte?'Prenota il tuo appuntamento':'Prenotazioni chiuse'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+// ── DETAIL EVENTO ────────────────────────────────────
+async function apriEvento(id){
+  const{data:ev}=await sb.from('eventi_prenotazioni').select('*,tipologie_evento(*)').eq('id',id).single();
+  if(!ev)return;
+  eventoCorrente=ev;
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('accessoView').style.display='none';
+  const dw=document.getElementById('detailView');
+  dw.classList.add('on');
+  
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-card">
+      <div class="detail-head">
+        <span style="display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;margin-bottom:12px">Prenotazioni ${ev.prenotazioni_aperte?'aperte':'chiuse'}</span>
+        <div class="detail-title">${ev.titolo}</div>
+        <div class="detail-meta">
+          📅 ${formatData(ev.data)}, ${ev.orario_inizio?.slice(0,5)||'09:00'} - ${ev.orario_fine?.slice(0,5)||'18:00'}<br>
+          📍 ${ev.indirizzo||ev.location||''}, ${ev.citta||''} ${ev.provincia?'('+ev.provincia+')':''}
+        </div>
+      </div>
+      <div class="detail-body">
+        ${ev.descrizione?`<div class="detail-section"><h3>Informazioni sull'evento</h3><div class="detail-text">${ev.descrizione}</div></div>`:''}
+        ${ev.requisiti?`<div class="detail-section"><h3>⚠️ Requisiti obbligatori per partecipare</h3><ul class="req-list">${ev.requisiti.split('\n').filter(r=>r.trim()).map(r=>`<li>${r}</li>`).join('')}</ul></div>`:''}
+        ${ev.partner?`<div class="detail-section"><h3>Partner sanitario</h3><div class="detail-text">${ev.partner}</div></div>`:''}
+        <div class="detail-section">
+          <h3>📍 Luogo della visita</h3>
+          <div style="background:var(--wc);color:#fff;border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:500;display:inline-block">
+            ${ev.indirizzo||ev.location||'—'}, ${ev.citta||''} ${ev.provincia?'('+ev.provincia+')':''}
+          </div>
+        </div>
+        <div class="detail-section">
+          <h3>⏰ Slot orari disponibili</h3>
+          <div id="detailSlots"><div class="loading">Caricamento slot...</div></div>
+        </div>
+        <div style="text-align:center;margin-top:24px">
+          <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">L'evento è completamente gratuito</div>
+          <button class="btn-prenota" style="font-size:14px;padding:14px 32px" ${!ev.prenotazioni_aperte?'disabled':''} onclick="avviaPrenota()">
+            ${ev.prenotazioni_aperte?'Prenota il tuo appuntamento':'Prenotazioni chiuse'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  
+  loadDetailSlots(id);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function loadDetailSlots(evId){
+  const{data}=await sb.from('slot_con_disponibilita').select('*').eq('evento_id',evId).order('orario_inizio');
+  const div=document.getElementById('detailSlots');
+  if(!data?.length){div.innerHTML='<p style="color:var(--tx3);font-size:13px">Nessuno slot configurato.</p>';return;}
+  div.innerHTML=`<div class="slot-grid">${data.map(s=>{
+    const liberi=s.posti_liberi||0;
+    const pieno=liberi<=0;
+    return`<div class="slot-btn ${pieno?'':''}${pieno?'':''}" style="${pieno?'opacity:.4;cursor:not-allowed;':'cursor:pointer'}" onclick="${pieno?'':''}">
+      <div>${s.orario_inizio?.slice(0,5)} – ${s.orario_fine?.slice(0,5)}</div>
+      <div class="slot-liberi">${pieno?'Esaurito':`${liberi} post${liberi===1?'o':'i'} disponibil${liberi===1?'e':'i'}`}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── PRENOTA ──────────────────────────────────────────
+function avviaPrenota(){
+  if(!eventoCorrente)return;
+  cfVerificato=null;
+  document.getElementById('cfInput').value='';
+  document.getElementById('cfErr').style.display='none';
+  document.getElementById('mCf').classList.add('on');
+}
+
+async function verificaCf(){
+  const cf=document.getElementById('cfInput').value.trim().toUpperCase();
+  const err=document.getElementById('cfErr');
+  err.style.display='none';
+  if(cf.length<16){err.textContent='Inserisci un codice fiscale valido (16 caratteri).';err.style.display='block';return;}
+  
+  // Verifica età da CF
+  const tipologia=eventoCorrente.tipologie_evento;
+  if(tipologia){
+    try{
+      const annoStr=cf.substring(6,8);
+      let anno=parseInt(annoStr);
+      anno=anno<=26?2000+anno:1900+anno;
+      const eta=new Date().getFullYear()-anno;
+      if(eta<tipologia.eta_min||eta>tipologia.eta_max){
+        err.textContent=`Questo evento è riservato a persone tra ${tipologia.eta_min} e ${tipologia.eta_max} anni.`;
+        err.style.display='block';return;
+      }
+    }catch(e){}
+  }
+  
+  // Verifica prenotazione duplicata
+  const{data:esistente}=await sb.from('prenotazioni')
+    .select('id').eq('evento_id',eventoCorrente.id).eq('codice_fiscale',cf).eq('stato','confermata');
+  if(esistente?.length){
+    err.textContent='Hai già una prenotazione per questo evento con questo codice fiscale.';
+    err.style.display='block';return;
+  }
+  
+  cfVerificato=cf;
+  closeM('mCf');
+  await apriModalPrenota();
+}
+
+async function apriModalPrenota(){
+  // Carica slot
+  const{data:slots}=await sb.from('slot_con_disponibilita')
+    .select('*').eq('evento_id',eventoCorrente.id).order('orario_inizio');
+  
+  slotSelezionato=null;
+  document.getElementById('slotSelLabel').textContent='—';
+  document.getElementById('pCf').value=cfVerificato||'';
+  document.getElementById('pNome').value='';
+  document.getElementById('pCognome').value='';
+  document.getElementById('pEmail').value='';
+  document.getElementById('pTel').value='';
+  document.getElementById('pNote').value='';
+  
+  const grid=document.getElementById('slotGrid');
+  if(!slots?.length){grid.innerHTML='<p style="color:var(--tx3);font-size:12px">Nessuno slot disponibile.</p>';}
+  else{
+    grid.innerHTML=slots.map(s=>{
+      const liberi=s.posti_liberi||0;
+      const pieno=liberi<=0;
+      return`<button class="slot-btn" ${pieno?'disabled':''} onclick="selezionaSlot('${s.id}','${s.orario_inizio?.slice(0,5)} – ${s.orario_fine?.slice(0,5)}',this)">
+        ${s.orario_inizio?.slice(0,5)} – ${s.orario_fine?.slice(0,5)}
+        <div class="slot-liberi">${pieno?'Esaurito':`${liberi} disp.`}</div>
+      </button>`;
+    }).join('');
+  }
+  
+  document.getElementById('mPrenota').classList.add('on');
+}
+
+function selezionaSlot(id, label, el){
+  slotSelezionato=id;
+  document.getElementById('slotSelLabel').textContent=label;
+  document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function confermaPrenotazione(){
+  const nome=document.getElementById('pNome').value.trim();
+  const cognome=document.getElementById('pCognome').value.trim();
+  const email=document.getElementById('pEmail').value.trim();
+  const cf=document.getElementById('pCf').value.trim().toUpperCase();
+  if(!nome||!cognome||!email||!cf){toast('Compila tutti i campi obbligatori','error');return;}
+  if(!slotSelezionato){toast('Seleziona uno slot orario','error');return;}
+  
+  const btn=document.getElementById('btnConferma');
+  btn.textContent='Conferma in corso...';btn.disabled=true;
+  
+  // Genera codice prenotazione
+  const codice='WC-'+Math.random().toString(36).substring(2,8).toUpperCase();
+  
+  const{data,error}=await sb.from('prenotazioni').insert({
+    slot_id:slotSelezionato,
+    evento_id:eventoCorrente.id,
+    nome,cognome,email,
+    telefono:document.getElementById('pTel').value.trim()||null,
+    codice_fiscale:cf,
+    data_nascita:document.getElementById('pDdn').value||null,
+    note:document.getElementById('pNote').value.trim()||null,
+    stato:'confermata',
+    codice_prenotazione:codice,
+  }).select().single();
+  
+  if(error){
+    toast('Errore nella prenotazione. Riprova.','error');
+    btn.textContent='Conferma prenotazione';btn.disabled=false;
+    return;
+  }
+  
+  closeM('mPrenota');
+  btn.textContent='Conferma prenotazione';btn.disabled=false;
+  
+  // Mostra conferma
+  showConferma(data, nome, cognome);
+}
+
+function showConferma(pren, nome, cognome){
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('detailView').classList.remove('on');
+  const dw=document.getElementById('detailView');
+  dw.classList.add('on');
+  document.getElementById('detailContent').innerHTML=`
+    <div class="conferma-card">
+      <div class="conferma-icon">✅</div>
+      <div class="conferma-title">Prenotazione confermata!</div>
+      <div class="conferma-sub">Riceverai una conferma all'indirizzo email fornito.<br>Presentati 10 minuti prima del tuo appuntamento.</div>
+      <div class="conferma-code">📋 ${pren.codice_prenotazione}</div>
+    </div>
+    <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:24px;margin-top:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Riepilogo prenotazione</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+        <div><div style="color:var(--tx3);font-size:11px;margin-bottom:2px">Nome</div><strong>${nome} ${cognome}</strong></div>
+        <div><div style="color:var(--tx3);font-size:11px;margin-bottom:2px">Evento</div><strong>${eventoCorrente?.titolo||'—'}</strong></div>
+        <div><div style="color:var(--tx3);font-size:11px;margin-bottom:2px">Data</div><strong>${formatData(eventoCorrente?.data)}</strong></div>
+        <div><div style="color:var(--tx3);font-size:11px;margin-bottom:2px">Luogo</div><strong>${eventoCorrente?.citta||'—'} ${eventoCorrente?.provincia?'('+eventoCorrente.provincia+')':''}</strong></div>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--bd);font-size:12px;color:var(--tx3)">
+        Per modificare o cancellare la tua prenotazione accedi con il tuo codice fiscale tramite il pulsante "Accedi alla tua prenotazione".
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn-main" onclick="showHome()">Torna agli eventi</button>
+    </div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── ACCESSO PRENOTAZIONE ──────────────────────────────
+function showAccesso(){
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('detailView').classList.remove('on');
+  document.getElementById('accessoView').style.display='block';
+  document.getElementById('accessoResult').innerHTML='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function cercaPrenotazione(){
+  const cf=document.getElementById('accessoCf').value.trim().toUpperCase();
+  if(cf.length<16){toast('Inserisci un codice fiscale valido','error');return;}
+  const{data}=await sb.from('prenotazioni')
+    .select('*,eventi_prenotazioni(titolo,data,citta,provincia,orario_inizio,orario_fine),slot_orari(orario_inizio,orario_fine)')
+    .eq('codice_fiscale',cf).order('created_at',{ascending:false});
+  const div=document.getElementById('accessoResult');
+  if(!data?.length){div.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">Nessuna prenotazione trovata per questo codice fiscale.</div>';return;}
+  div.innerHTML=data.map(p=>`
+    <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--tx)">${p.eventi_prenotazioni?.titolo||'—'}</div>
+          <div style="font-size:12px;color:var(--tx3);margin-top:3px">
+            ${formatData(p.eventi_prenotazioni?.data)} · ${p.slot_orari?.orario_inizio?.slice(0,5)||'—'}–${p.slot_orari?.orario_fine?.slice(0,5)||'—'}<br>
+            Codice: <strong style="font-family:monospace">${p.codice_prenotazione}</strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;background:${p.stato==='confermata'?'#d1fae5':'#fee2e2'};color:${p.stato==='confermata'?'#065f46':'#dc2626'}">${p.stato}</span>
+          ${p.stato==='confermata'?`<button style="font-family:var(--f);font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;border:1px solid #dc2626;background:transparent;color:#dc2626" onclick="cancellaDaAccesso('${p.id}')">Cancella</button>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function cancellaDaAccesso(id){
+  if(!confirm('Sei sicuro di voler cancellare questa prenotazione?'))return;
+  await sb.from('prenotazioni').update({stato:'cancellata'}).eq('id',id);
+  toast('Prenotazione cancellata','success');
+  cercaPrenotazione();
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function showHome(){
+  document.getElementById('homeView').style.display='block';
+  document.getElementById('detailView').classList.remove('on');
+  document.getElementById('accessoView').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function closeM(id){document.getElementById(id).classList.remove('on');}
+document.querySelectorAll('.mbg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
+document.getElementById('cfInput').addEventListener('keydown',e=>{if(e.key==='Enter')verificaCf();});
+document.getElementById('accessoCf').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});
+
+function formatData(d){
+  if(!d)return'—';
+  try{return new Date(d+'T00:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+  catch{return d;}
+}
+
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(type||'');t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);
+}
+
+init();
+</script>
+</body>
+</html>
