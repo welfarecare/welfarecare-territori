@@ -87,13 +87,16 @@ body{font-family:var(--f);background:#0d1117;color:var(--tx);min-height:100vh;di
 .app-card.materiale:hover::before{opacity:1}
 .app-card.materiale .card-icon-bg{background:linear-gradient(135deg,#f59e0b,#d97706)}
 
+/* Calendario — viola */
+.app-card.calendario::before{background:linear-gradient(135deg,rgba(139,92,246,.06),rgba(109,40,217,.04))}
+.app-card.calendario:hover::before{opacity:1}
+.app-card.calendario .card-icon-bg{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+
 .card-icon-bg{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .card-icon-bg svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8}
 .card-name{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:6px}
 .card-desc{font-size:12px;color:var(--tx3);line-height:1.6}
-.card-arrow{position:absolute;bottom:24px;right:24px;width:28px;height:28px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .2s}
-.app-card:hover .card-arrow{transform:translateX(3px)}
-.card-arrow svg{width:13px;height:13px;stroke:var(--tx3);fill:none;stroke-width:2}
+
 .card-badge{position:absolute;top:20px;right:20px;background:var(--bg);border:1px solid var(--bd2);border-radius:20px;font-size:10px;font-weight:600;color:var(--tx3);padding:3px 9px;letter-spacing:.04em}
 
 /* ── RECENT ── */
@@ -212,7 +215,16 @@ const TOOLS = [
     url: '/materiale/',
     color: 'materiale',
     icon: `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
-    comingSoon: true
+    comingSoon: false
+  },
+  {
+    id: 'calendario',
+    name: 'Calendario',
+    desc: 'Visualizza e gestisci il calendario degli eventi, le date degli appuntamenti e le scadenze operative.',
+    url: '/calendario/',
+    color: 'calendario',
+    icon: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>`,
+    comingSoon: false
   }
 ];
 
@@ -287,10 +299,7 @@ function renderCards(moduli, ruolo) {
       ${locked ? `<span class="card-badge">Accesso non consentito</span>` : ''}
       <div class="card-name">${tool.name}</div>
       <div class="card-desc">${tool.desc}</div>
-      ${!locked && !cs ? `
-        <div class="card-arrow">
-          <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-        </div>` : ''}
+
     </div>`;
   }).join('');
 }
