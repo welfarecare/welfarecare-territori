@@ -690,6 +690,11 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
           <div style="font-size:10px;color:var(--tx3);margin-top:4px" id="uploadLabel">Caricamento...</div>
         </div>
       </div>
+      <!-- STORICO EDIZIONI -->
+      <div style="padding:14px 16px;border-top:1px solid var(--bd)">
+        <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Storico edizioni</div>
+        <div id="schedaStorico"><div class="empty" style="padding:12px;font-size:11px">Nessuna edizione registrata</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1152,6 +1157,8 @@ async function apriScheda(id){
   }
   // Carica documenti
   await loadDocumentiTerritorio(id);
+  // Carica storico edizioni
+  await loadStoricoEdizioni(id);
   document.getElementById('mScheda').classList.add('on');
 }
 
@@ -1254,6 +1261,91 @@ async function salvaProfilo(){
 }
 
 function rbadge(r){return{superadmin:'<span class="bx bwc">Super admin</span>',supervisore:'<span class="bx bb">Supervisore</span>',operatore:'<span class="bx bk">Operatore</span>',visualizzatore:'<span class="bx" style="background:#f1efe8;color:#5f5e5a">Visualizzatore</span>'}[r]||r;}
+
+// ── STORICO EDIZIONI ─────────────────────────────────
+async function loadStoricoEdizioni(territorioId) {
+  const div = document.getElementById('schedaStorico');
+  div.innerHTML = '<div class="empty" style="padding:12px;font-size:11px">Caricamento...</div>';
+
+  // Carica assegnazioni per questo territorio
+  const { data: ass } = await sb.from('assegnazioni')
+    .select('*, profili(nome,cognome)')
+    .eq('territorio_id', territorioId)
+    .order('anno', { ascending: false });
+
+  // Carica anche programma (vecchio sistema)
+  const { data: prog } = await sb.from('programma')
+    .select('*, profili(nome,cognome)')
+    .eq('territorio_id', territorioId)
+    .order('anno', { ascending: false });
+
+  const statoLabels = { bozza:'Bozza', confermata:'Confermata', in_lavorazione:'In lavorazione', completata:'Completata', pianificato:'Pianificato', in_corso:'In corso' };
+  const statoColors = { completata:'bg', confermata:'bb', in_lavorazione:'ba', bozza:'bk', pianificato:'bk', in_corso:'ba' };
+
+  const items = [];
+
+  // Aggiungi assegnazioni
+  (ass||[]).forEach(a => {
+    const inc = a.profili ? `${a.profili.nome||''} ${a.profili.cognome||''}`.trim() : '—';
+    items.push({
+      anno: a.anno,
+      inc,
+      tipo: a.tipo_evento || '—',
+      stato: a.stato,
+      note: a.note,
+      data_evento: a.data_evento,
+      modalita: a.modalita,
+      source: 'assegnazione'
+    });
+  });
+
+  // Aggiungi da programma se non già presente
+  (prog||[]).forEach(p => {
+    if (!items.find(i => i.anno === p.anno)) {
+      const inc = p.profili ? `${p.profili.nome||''} ${p.profili.cognome||''}`.trim() : '—';
+      items.push({ anno: p.anno, inc, tipo: p.note||'—', stato: p.stato, note: null, source: 'programma' });
+    }
+  });
+
+  // Carica anche budget storico
+  const { data: budget } = await sb.from('budget_territori')
+    .select('anno, importo')
+    .eq('territorio_id', territorioId)
+    .order('anno', { ascending: false });
+
+  const budgetByAnno = {};
+  (budget||[]).forEach(b => { budgetByAnno[b.anno] = b.importo; });
+
+  if (!items.length && !budget?.length) {
+    div.innerHTML = '<div class="empty" style="padding:12px;font-size:11px">Nessuna edizione registrata</div>';
+    return;
+  }
+
+  // Raggruppa tutti gli anni noti
+  const tuttiAnni = [...new Set([...items.map(i=>i.anno), ...Object.keys(budgetByAnno).map(Number)])].sort((a,b)=>b-a);
+
+  div.innerHTML = tuttiAnni.map(anno => {
+    const item = items.find(i => i.anno === anno);
+    const budget = budgetByAnno[anno];
+    const statoLbl = item ? (statoLabels[item.stato] || item.stato) : null;
+    const statoCls = item ? (statoColors[item.stato] || 'bk') : null;
+
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)">
+      <div style="width:40px;font-weight:700;font-size:13px;color:var(--tx);flex-shrink:0">${anno}</div>
+      <div style="flex:1;min-width:0">
+        ${item ? `
+          <div style="font-size:12px;font-weight:500;color:var(--tx)">${item.tipo}${item.inc !== '—' ? ` · <span style="color:var(--tx3)">${item.inc}</span>` : ''}</div>
+          ${item.data_evento ? `<div style="font-size:10px;color:var(--tx3);margin-top:2px">📅 ${new Date(item.data_evento).toLocaleDateString('it-IT')}</div>` : ''}
+          ${item.note ? `<div style="font-size:11px;color:var(--tx2);margin-top:3px;font-style:italic">${item.note}</div>` : ''}
+        ` : '<div style="font-size:11px;color:var(--tx3)">Solo budget registrato</div>'}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        ${statoLbl ? `<span class="bx ${statoCls}" style="font-size:10px">${statoLbl}</span>` : ''}
+        ${budget ? `<span style="font-size:11px;font-weight:600;color:var(--wcd)">€ ${Number(budget).toLocaleString('it-IT')}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('') + '<div style="height:4px"></div>';
+}
 
 // ── DOCUMENTI TERRITORIO ────────────────────────────
 let schedaTerritoryId = null;
