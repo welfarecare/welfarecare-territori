@@ -715,7 +715,7 @@ function closeModal() {
   editIdx = null;
 }
 
-function salvaEvento() {
+async function salvaEvento() {
   const comune = document.getElementById('eComune').value.trim();
   if (!comune) { toast('Il comune è obbligatorio','error'); return; }
   const ev = {
@@ -735,7 +735,15 @@ function salvaEvento() {
     toast('Evento aggiornato','success');
   } else {
     eventi.push(ev);
-    toast('Evento aggiunto','success');
+    saveEventi();
+    closeModal();
+    renderStats();
+    renderIncaricatiFilter();
+    initGrigliaData();
+    renderView();
+    toast('Evento aggiunto — sincronizzazione in corso...', '');
+    await sincronizzaConPrenotazioni(ev);
+    return;
   }
   saveEventi();
   closeModal();
@@ -1204,6 +1212,83 @@ function completamentoOp(e) {
   const comp = OP_FIELDS.filter(f => op[f] && op[f] !== '').length +
                OP_CHECKS.filter(f => op[f]).length;
   return Math.round((comp / tot) * 100);
+}
+
+// ── SYNC PRENOTAZIONI ────────────────────────────────
+async function sincronizzaConPrenotazioni(ev) {
+  try {
+    // Cerca tipologia corrispondente in base al tipo evento
+    const { data: tipologie } = await sb.from('tipologie_evento').select('*');
+    let tipologiaId = null;
+    if (tipologie?.length && ev.tipo) {
+      const tipoLower = ev.tipo.toLowerCase();
+      const match = tipologie.find(t => {
+        const nLower = t.nome.toLowerCase();
+        if (tipoLower.includes('nevi') && nLower.includes('nevi')) return true;
+        if (tipoLower.includes('tiroide') && nLower.includes('tiroide')) return true;
+        if (tipoLower.includes('prostata') && !tipoLower.includes('mammo') && nLower.includes('prostata') && !nLower.includes('mammo')) return true;
+        if ((tipoLower.includes('mammo') || tipoLower.includes('m+e')) && nLower.includes('mammo')) return true;
+        return false;
+      });
+      if (match) tipologiaId = match.id;
+    }
+
+    // Estrai slot numerici dalla stringa (es. "45 posti" → 45)
+    let slotTotali = 45;
+    if (ev.slot) {
+      const num = ev.slot.match(/\d+/);
+      if (num) slotTotali = parseInt(num[0]);
+    }
+
+    // Estrai orari (default 09:00-18:10)
+    const orarioI = '09:00:00';
+    const orarioF = '18:10:00';
+
+    // Crea evento nelle prenotazioni
+    const { data: nuovoEv, error } = await sb.from('eventi_prenotazioni').insert({
+      titolo: ev.comune,
+      data: ev.data && ev.data.length === 10 ? ev.data : null,
+      orario_inizio: orarioI,
+      orario_fine: orarioF,
+      location: ev.location || null,
+      citta: ev.comune.split(' ')[0] || null,
+      descrizione: ev.note || null,
+      partner: ev.partner || null,
+      note_interne: `Importato da Calendario · Incaricato: ${ev.incaricato || '—'} · Tipo: ${ev.tipo || '—'}`,
+      slot_totali: slotTotali,
+      attivo: false, // disattivo di default finché non completato dall'admin
+      prenotazioni_aperte: false,
+      tipologia_id: tipologiaId,
+    }).select().single();
+
+    if (error) {
+      console.warn('Sync prenotazioni:', error.message);
+      return;
+    }
+
+    // Genera slot automatici ogni 10 minuti (09:00 → 18:10)
+    if (nuovoEv?.id) {
+      const slots = [];
+      let startMin = 9 * 60; // 09:00
+      const endMin = 18 * 60 + 10; // 18:10
+      while (startMin + 10 <= endMin) {
+        const fmt = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:00`;
+        slots.push({
+          evento_id: nuovoEv.id,
+          orario_inizio: fmt(startMin),
+          orario_fine: fmt(startMin + 10),
+          posti_totali: 1,
+        });
+        startMin += 10;
+      }
+      await sb.from('slot_orari').insert(slots);
+      
+      toast(`✅ Evento sincronizzato con Prenotazioni (${slots.length} slot creati) — attivalo dal pannello admin`, 'success');
+    }
+  } catch (e) {
+    console.warn('Errore sync:', e);
+    // Non blocca il flusso principale
+  }
 }
 
 // ── UTILS ─────────────────────────────────────────────
