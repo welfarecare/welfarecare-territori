@@ -147,6 +147,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 /* MISC */
 .empty{text-align:center;padding:36px;color:var(--tx3);font-size:12px}
 .loading{text-align:center;padding:28px;color:var(--tx3);font-size:12px}
+.leaflet-popup-content-wrapper{font-family:var(--f);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid var(--bd)}
+.leaflet-popup-content{margin:12px 16px;font-size:12px;color:var(--tx);min-width:160px}
+.map-popup-title{font-weight:600;font-size:13px;color:var(--tx);margin-bottom:4px}
+.map-popup-meta{color:var(--tx3);font-size:11px;margin-bottom:8px}
+.map-popup-stato{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-bottom:8px}
+.map-popup-btn{font-family:var(--f);font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;cursor:pointer;border:1px solid var(--wc);background:transparent;color:var(--wc);width:100%;transition:all .15s}
+.map-popup-btn:hover{background:var(--wcl)}
 .toast{position:fixed;bottom:22px;right:22px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none}
 .toast.success{background:#3b6d11}.toast.error{background:#a32d2d}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
@@ -197,6 +204,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 .arch-year-cnt{font-size:11px;color:var(--tx3)}
 .add-comune-row{display:flex;align-items:center;gap:8px;padding:10px 18px;border-top:1px solid var(--bd);background:var(--sur2)}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -503,6 +512,42 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
           </div>
         </div>
 
+        <!-- MAPPA -->
+        <div class="sec" id="s-mappa" style="height:calc(100vh - 120px);display:none;flex-direction:column">
+          <!-- Toolbar mappa -->
+          <div style="display:flex;gap:10px;align-items:center;padding:12px 0;flex-shrink:0;flex-wrap:wrap">
+            <select class="fs" id="mapFilterStato" onchange="filterMappaMarkers()" style="width:160px">
+              <option value="">Tutti gli stati</option>
+              <option value="attivo">● Attivi</option>
+              <option value="NO">● NO</option>
+              <option value="MAIL">● Mail</option>
+              <option value="ASSEGNATO">● Assegnati</option>
+              <option value="SOSPESO">● Sospesi</option>
+              <option value="PATROCINIO">● Patrocinio</option>
+              <option value="AGENTE">● Agente</option>
+              <option value="NO P.I.">● No P.I.</option>
+            </select>
+            <select class="fs" id="mapFilterReg" onchange="filterMappaMarkers()" style="width:160px">
+              <option value="">Tutte le regioni</option>
+            </select>
+            <select class="fs" id="mapFilterInc" onchange="filterMappaMarkers()" style="width:160px">
+              <option value="">Tutti gli incaricati</option>
+            </select>
+            <div style="flex:1"></div>
+            <!-- Legenda -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;align-items:center">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#26ADE4;display:inline-block"></span>Attivo</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span>NO</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mail</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span>Assegnato</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Patrocinio</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#94a3b8;display:inline-block"></span>Sospeso/Altro</span>
+            </div>
+            <div style="font-size:11px;color:var(--tx3)" id="mapCount">— comuni</div>
+          </div>
+          <div id="mapContainer" style="flex:1;border-radius:var(--rl);overflow:hidden;border:1px solid var(--bd)"></div>
+        </div>
+
         <!-- ARCHIVIO -->
         <div class="sec" id="s-archivio">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
@@ -631,6 +676,154 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 </div>
 
 <script>
+// ── MAPPA ────────────────────────────────────────────
+let mappaInstance = null;
+let mappaAllData = [];
+let mappaInitialized = false;
+
+const STATO_COLORS = {
+  'attivo': '#26ADE4', 'NO': '#ef4444', 'MAIL': '#f59e0b',
+  'ASSEGNATO': '#10b981', 'PATROCINIO': '#8b5cf6', 'SOSPESO': '#94a3b8',
+  'AGENTE': '#f97316', 'NO P.I.': '#64748b', 'PICCOLO': '#cbd5e1', 'default': '#94a3b8'
+};
+
+function getStatoColor(note) {
+  if (!note) return STATO_COLORS.default;
+  const n = note.replace('Stato: ','').trim().toUpperCase();
+  if (n === 'ATTIVO') return STATO_COLORS.attivo;
+  for (const key of Object.keys(STATO_COLORS)) {
+    if (n.includes(key.toUpperCase())) return STATO_COLORS[key];
+  }
+  return STATO_COLORS.default;
+}
+
+function getStatoLabel(note) {
+  if (!note) return '—';
+  return note.replace('Stato: ','').trim();
+}
+
+async function initMappa() {
+  // Popola filtri
+  const regSel = document.getElementById('mapFilterReg');
+  const incSel = document.getElementById('mapFilterInc');
+  if (!regSel.options.length || regSel.options.length < 2) {
+    const regioni = [...new Set(allT.map(t=>t.regione).filter(Boolean))].sort();
+    regioni.forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; regSel.appendChild(o); });
+    const incaricati = [...new Set(allT.map(t=>t.profili?`${t.profili.nome||''} ${t.profili.cognome||''}`.trim():'').filter(Boolean))].sort();
+    incaricati.forEach(i => { const o=document.createElement('option'); o.value=i; o.textContent=i; incSel.appendChild(o); });
+  }
+
+  if (mappaInitialized && mappaInstance) {
+    setTimeout(() => mappaInstance.invalidateSize(), 200);
+    return;
+  }
+
+  setTimeout(async () => {
+    mappaInstance = L.map('mapContainer').setView([45.5, 11.5], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(mappaInstance);
+
+    mappaInitialized = true;
+    await geocodificaEAggiungi();
+  }, 150);
+}
+
+async function geocodificaEAggiungi() {
+  const div = document.getElementById('mapCount');
+  div.textContent = 'Geocodifica in corso...';
+
+  const regionCenters = {
+    'Veneto':[45.43,12.33],'Lombardia':[45.46,9.19],'Piemonte':[45.07,7.69],
+    'Friuli-Venezia Giulia':[45.90,13.23],'Emilia-Romagna':[44.49,11.34],
+    'Toscana':[43.77,11.25],'Umbria':[43.11,12.39],'Puglia':[41.12,16.86],
+    'default':[45.46,9.19]
+  };
+
+  mappaAllData = [];
+  const coordsCache = {};
+  let processed = 0;
+
+  for (const t of allT) {
+    processed++;
+    if (processed % 10 === 0) {
+      div.textContent = `Caricamento ${processed}/${allT.length}...`;
+      await new Promise(r => setTimeout(r, 5));
+    }
+
+    const cacheKey = `${t.comune}|${t.provincia}`;
+    let coords = coordsCache[cacheKey];
+
+    if (!coords) {
+      try {
+        const q = encodeURIComponent(`${t.comune}, ${t.provincia}, Italia`);
+        const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=it`, {
+          headers: { 'Accept-Language': 'it', 'User-Agent': 'WelfareCare/1.0' }
+        });
+        const res = await resp.json();
+        if (res?.[0]) {
+          coords = [parseFloat(res[0].lat), parseFloat(res[0].lon)];
+        } else {
+          const c = regionCenters[t.regione] || regionCenters.default;
+          coords = [c[0] + (Math.random()-.5)*.4, c[1] + (Math.random()-.5)*.4];
+        }
+      } catch {
+        const c = regionCenters[t.regione] || regionCenters.default;
+        coords = [c[0] + (Math.random()-.5)*.4, c[1] + (Math.random()-.5)*.4];
+      }
+      coordsCache[cacheKey] = coords;
+      await new Promise(r => setTimeout(r, 1100)); // Nominatim rate limit
+    }
+
+    const color = getStatoColor(t.note);
+    const stato = getStatoLabel(t.note);
+    const incNome = t.profili ? `${t.profili.nome||''} ${t.profili.cognome||''}`.trim() : '';
+
+    const marker = L.circleMarker(coords, {
+      radius: 7, fillColor: color, color: '#fff',
+      weight: 1.5, opacity: 1, fillOpacity: 0.85
+    });
+
+    marker.bindPopup(`
+      <div style="font-weight:600;font-size:13px;color:#0d1117;margin-bottom:3px">${t.comune}</div>
+      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px">${t.provincia} · ${t.regione}</div>
+      <span style="display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-bottom:6px;background:${color}22;color:${color}">${stato}</span>
+      ${incNome ? `<div style="font-size:11px;color:#4a5568;margin-bottom:6px">👤 ${incNome}</div>` : ''}
+      <button onclick="apriSchedaDaMappa('${t.id}')" style="font-family:Poppins,sans-serif;font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;cursor:pointer;border:1px solid #26ADE4;background:transparent;color:#26ADE4;width:100%">Apri scheda →</button>
+    `, { maxWidth: 220 });
+
+    marker._stato = stato;
+    marker._regione = t.regione;
+    marker._incaricato = incNome;
+    mappaAllData.push({ marker, t });
+  }
+
+  filterMappaMarkers();
+  div.textContent = `${allT.length} comuni caricati`;
+}
+
+function filterMappaMarkers() {
+  if (!mappaInstance) return;
+  const fs = document.getElementById('mapFilterStato').value.toLowerCase();
+  const fr = document.getElementById('mapFilterReg').value;
+  const fi = document.getElementById('mapFilterInc').value;
+  let count = 0;
+  mappaAllData.forEach(({ marker, t }) => {
+    const stato = (marker._stato || '').toLowerCase();
+    const ok = (!fs || stato.includes(fs)) && (!fr || t.regione === fr) && (!fi || marker._incaricato === fi);
+    if (ok) { if (!mappaInstance.hasLayer(marker)) marker.addTo(mappaInstance); count++; }
+    else { if (mappaInstance.hasLayer(marker)) mappaInstance.removeLayer(marker); }
+  });
+  document.getElementById('mapCount').textContent = `${count} comuni visibili`;
+}
+
+function apriSchedaDaMappa(id) {
+  mappaInstance.closePopup();
+  navTo('terr');
+  setTimeout(() => apriScheda(id), 300);
+}
+
 const SB_URL='https://koshtsgvfqwuhoykfqai.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
 const sb=supabase.createClient(SB_URL,SB_KEY);
@@ -1033,7 +1226,7 @@ function closeM(id){document.getElementById(id).classList.remove('on');}
 function toggleMenu(){document.getElementById('uMenu').classList.toggle('on');}
 function handleSearch(q){if(document.getElementById('s-terr').classList.contains('on')){document.getElementById('tSearch').value=q;renderView();}}
 
-const NAV={dash:'Dashboard',terr:'Territori',programma:'Programma di Sviluppo',archivio:'Archivio Edizioni',utenti:'Utenti & Ruoli',impost:'Impostazioni'};
+const NAV={dash:'Dashboard',terr:'Territori',mappa:'Mappa Territori',programma:'Programma di Sviluppo',archivio:'Archivio Edizioni',utenti:'Utenti & Ruoli',impost:'Impostazioni'};
 function navTo(id){
   document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.s===id));
   document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id==='s-'+id));
