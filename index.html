@@ -92,6 +92,11 @@ body{font-family:var(--f);background:#0d1117;color:var(--tx);min-height:100vh;di
 .app-card.calendario:hover::before{opacity:1}
 .app-card.calendario .card-icon-bg{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
 
+/* Incaricati — verde teal */
+.app-card.incaricati::before{background:linear-gradient(135deg,rgba(20,184,166,.06),rgba(15,118,110,.04))}
+.app-card.incaricati:hover::before{opacity:1}
+.app-card.incaricati .card-icon-bg{background:linear-gradient(135deg,#14b8a6,#0f766e)}
+
 /* Formazione — rosa/rosso */
 .app-card.formazione::before{background:linear-gradient(135deg,rgba(236,72,153,.06),rgba(190,24,93,.04))}
 .app-card.formazione:hover::before{opacity:1}
@@ -230,6 +235,15 @@ const TOOLS = [
     color: 'calendario',
     icon: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>`,
     comingSoon: false
+  },
+  {
+    id: 'incaricati',
+    name: 'Incaricati',
+    desc: 'Gestisci gli incaricati, i loro territori assegnati, ruoli e informazioni di contatto.',
+    url: '/incaricati/',
+    color: 'incaricati',
+    icon: `<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    comingSoon: true
   },
   {
     id: 'formazione',
