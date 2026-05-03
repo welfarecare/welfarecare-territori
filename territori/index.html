@@ -391,9 +391,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
               <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 11h4"/></svg>
               Esporta PDF
             </button>
-            <button class="btn btnp" onclick="apriModalAggiuntaProgramma()">
-              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:1.8"><path d="M8 2v12M2 8h12"/></svg>
+            <button class="btn btns" onclick="apriModalAggiuntaProgramma()" style="font-size:11px">
+              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M8 2v12M2 8h12"/></svg>
               Aggiungi comune
+            </button>
+            <button class="btn btnp" onclick="generaProgramma()" id="btnGeneraProgramma">
+              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:1.8"><path d="M2 8h2l2-5 3 10 2-5h3"/></svg>
+              Genera programma
             </button>
           </div>
           <!-- BODY -->
@@ -1816,6 +1820,107 @@ async function rimuoviDaProgramma(id){
   await sb.from('programma').delete().eq('id',id);
   toast('Rimosso','success');
   await loadProgramma();
+}
+
+async function generaProgramma() {
+  const incId = document.getElementById('prIncaricato').value;
+  const anno = parseInt(document.getElementById('prAnno').value) || new Date().getFullYear();
+  
+  if (!incId) { toast('Seleziona prima un incaricato', 'error'); return; }
+
+  const incNome = document.getElementById('prIncaricato').options[document.getElementById('prIncaricato').selectedIndex].text;
+  
+  // Verifica se esiste già un programma
+  const { data: esistente } = await sb.from('programma')
+    .select('id').eq('anno', anno).eq('incaricato_id', incId);
+  
+  if (esistente?.length) {
+    if (!confirm(`Esiste già un programma per ${incNome} nel ${anno} con ${esistente.length} comuni.\nVuoi svuotarlo e rigenerarlo?`)) return;
+    await sb.from('programma').delete().eq('anno', anno).eq('incaricato_id', incId);
+  }
+
+  const btn = document.getElementById('btnGeneraProgramma');
+  btn.textContent = 'Generazione...'; btn.disabled = true;
+
+  try {
+    // STEP 1: Carica storico edizioni passate (programma anni precedenti)
+    const { data: storico } = await sb.from('programma')
+      .select('territorio_id, anno, territori(comune,provincia,regione)')
+      .eq('incaricato_id', incId)
+      .lt('anno', anno)
+      .order('anno', { ascending: false });
+
+    // Conta quante volte ogni comune è stato lavorato
+    const conteggioStorico = {};
+    (storico || []).forEach(r => {
+      const tid = r.territorio_id;
+      if (!conteggioStorico[tid]) conteggioStorico[tid] = { count: 0, territorio: r.territori };
+      conteggioStorico[tid].count++;
+    });
+
+    // STEP 2: Carica assegnazioni confermate per quest'anno
+    const { data: assegnazioni } = await sb.from('assegnazioni')
+      .select('territorio_id, tipo_evento, data_evento, modalita, range_eta, note, territori(comune,provincia,regione)')
+      .eq('incaricato_id', incId)
+      .eq('anno', anno)
+      .in('stato', ['confermata', 'in_lavorazione', 'completata']);
+
+    const assegnazioniMap = {};
+    (assegnazioni || []).forEach(a => { assegnazioniMap[a.territorio_id] = a; });
+
+    // STEP 3: Costruisci lista ordinata
+    // Prima: comuni storici (ordinati per numero edizioni desc)
+    const comuniStorici = Object.entries(conteggioStorico)
+      .sort(([,a],[,b]) => b.count - a.count)
+      .map(([tid, info]) => ({
+        territorio_id: tid,
+        fonte: 'storico',
+        edizioni: info.count,
+        assegnazione: assegnazioniMap[tid] || null,
+        territorio: info.territorio
+      }));
+
+    // Poi: assegnazioni nuove (non nello storico)
+    const comuniNuovi = Object.entries(assegnazioniMap)
+      .filter(([tid]) => !conteggioStorico[tid])
+      .map(([tid, ass]) => ({
+        territorio_id: tid,
+        fonte: 'assegnazione',
+        edizioni: 0,
+        assegnazione: ass,
+        territorio: ass.territori
+      }));
+
+    const tuttiComuni = [...comuniStorici, ...comuniNuovi];
+
+    if (!tuttiComuni.length) {
+      toast('Nessun dato disponibile per generare il programma. Aggiungi assegnazioni o storico prima.', 'error');
+      btn.textContent = 'Genera programma'; btn.disabled = false;
+      return;
+    }
+
+    // STEP 4: Inserisci nel programma
+    const inserts = tuttiComuni.map((c, i) => ({
+      territorio_id: c.territorio_id,
+      incaricato_id: incId,
+      anno,
+      ordine: i + 1,
+      stato: 'pianificato',
+      data_evento: c.assegnazione?.data_evento || null,
+      note: c.fonte === 'storico'
+        ? `📋 ${c.edizioni} edizione${c.edizioni>1?'i':''} precedent${c.edizioni>1?'i':'e'}${c.assegnazione ? ' · Assegnato ' + anno : ''}`
+        : `🆕 Prima assegnazione ${anno}`,
+    }));
+
+    const { error } = await sb.from('programma').insert(inserts);
+    if (error) { toast('Errore: ' + error.message, 'error'); return; }
+
+    toast(`✅ Programma generato: ${comuniStorici.length} comuni storici + ${comuniNuovi.length} nuovi`, 'success');
+    await loadProgramma();
+
+  } finally {
+    btn.textContent = 'Genera programma'; btn.disabled = false;
+  }
 }
 
 function exportProgrammaPDF(){
