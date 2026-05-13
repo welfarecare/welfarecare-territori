@@ -1788,25 +1788,7 @@ function toast(msg,type=''){
 }
 
 function closeM(id){document.getElementById(id).classList.remove('on');}
-function toggleMenu(){document.getElementById('uMenu').classList.toggle('on');}
-function handleSearch(q){if(document.getElementById('s-terr').classList.contains('on')){document.getElementById('tSearch').value=q;renderView();}}
 
-const NAV={dash:'Dashboard',terr:'Territori',mappa:'Mappa Territori',assegnazioni:'Assegnazioni',programma:'Programma di Sviluppo'};
-function navTo(id){
-  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.s===id));
-  document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id==='s-'+id));
-  document.getElementById('ttl').textContent=NAV[id]||id;
-  document.getElementById('crumb').textContent=NAV[id]||id;
-  document.getElementById('uMenu').classList.remove('on');
-  if(id==='terr')renderView();
-  if(id==='programma')loadProgramma();
-  if(id==='mappa')initMappa();
-  if(id==='pipeline')loadPipeline();
-  if(id==='assegnazioni')loadAssegnazioni();
-}
-
-document.querySelectorAll('.mbg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
-document.addEventListener('click',e=>{if(!e.target.closest('.tn-u'))document.getElementById('uMenu').classList.remove('on');});
 
 document.getElementById('fReg').addEventListener('change',()=>{updateProv();renderView();});
 
@@ -2307,12 +2289,16 @@ function handleSearch(q) {
     renderView();
   }
 }
+document.querySelectorAll('.mbg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
 document.addEventListener('click', e => {
-  if (!e.target.closest('.tn-u')) document.getElementById('uMenu').classList.remove('on');
+  if (!e.target.closest('.tn-u') && !e.target.closest('.tb-user')) {
+    const menu = document.getElementById('uMenu');
+    if (menu) menu.classList.remove('on');
+  }
 });
 
 // ── LOGOUT ────────────────────────────────────────────
-async function logout() { await sb.auth.signOut(); window.location.href = '/'; }
+
 
 // ── SESSION ───────────────────────────────────────────
 // ─── PIPELINE ────────────────────────────────────────
