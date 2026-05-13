@@ -289,6 +289,11 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
       <svg viewBox="0 0 16 16"><rect x="1" y="2" width="3" height="12" rx="1"/><rect x="7" y="2" width="3" height="12" rx="1"/><rect x="13" y="2" width="3" height="12" rx="1"/></svg>
       Pipeline
     </button>
+    <button class="nav-item" data-view="assegnazioni" onclick="showView('assegnazioni')">
+      <svg viewBox="0 0 16 16"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/><path d="M13 7l2 2-4 4"/></svg>
+      Assegnazioni
+      <span class="nav-badge gray" id="badgeAssegnazioni">0</span>
+    </button>
     <div class="sidebar-foot">
       <div style="font-size:11px;color:var(--tx3)" id="sideRole">—</div>
     </div>
@@ -377,6 +382,22 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
         </div>
       </div>
 
+      <!-- ── ASSEGNAZIONI ── -->
+      <div class="view" id="view-assegnazioni">
+        <div class="toolbar">
+          <select class="fs" style="max-width:120px" id="assAnno" onchange="loadAssegnazioni()">
+            <option value="">Tutti gli anni</option>
+          </select>
+          <select class="fs" style="max-width:180px" id="assIncaricatoFilt" onchange="loadAssegnazioni()">
+            <option value="">Tutti gli incaricati</option>
+          </select>
+          <div class="toolbar-sp"></div>
+        </div>
+        <div id="assBody">
+          <div style="text-align:center;padding:48px;color:var(--tx3)">Caricamento...</div>
+        </div>
+      </div>
+
       <!-- ── PIPELINE ── -->
       <div class="view" id="view-pipeline">
         <div class="toolbar">
@@ -411,6 +432,10 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
     <button class="bn-btn" data-view="pipeline" onclick="showView('pipeline')">
       <svg viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="18" rx="1"/><rect x="18" y="3" width="4" height="18" rx="1"/></svg>
       Pipeline
+    </button>
+    <button class="bn-btn" data-view="assegnazioni" onclick="showView('assegnazioni')">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M19 8l2 2-5 5"/></svg>
+      Assegna
     </button>
   </div>
 </div>
@@ -509,6 +534,55 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
   </div>
 </div>
 
+<!-- ══ MODAL NUOVA EDIZIONE ══ -->
+<div class="overlay" id="modalEdizione">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="modalEdizioneTitle">Nuova edizione</div>
+      <button class="modal-close" onclick="closeModal('modalEdizione')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid">
+        <div class="fg full">
+          <div class="fl">Territorio *</div>
+          <select class="fs" id="eTerritorio"></select>
+        </div>
+        <div class="fg">
+          <div class="fl">Incaricato *</div>
+          <select class="fs" id="eIncaricato"><option value="">Seleziona...</option></select>
+        </div>
+        <div class="fg">
+          <div class="fl">Anno *</div>
+          <select class="fs" id="eAnno"></select>
+        </div>
+        <div class="fg full">
+          <div class="fl">Tipo evento</div>
+          <select class="fs" id="eTipoEvento">
+            <option value="">— Seleziona —</option>
+            <option value="Mammografia + Ecografia">Mammografia + Ecografia</option>
+            <option value="Mammografia + Prostata">Mammografia + Prostata</option>
+            <option value="Solo Prostata">Solo Prostata</option>
+            <option value="Solo Mammografia">Solo Mammografia</option>
+            <option value="Mappatura Nevi">Mappatura Nevi</option>
+            <option value="Melanoma">Melanoma</option>
+            <option value="Tiroide">Tiroide</option>
+            <option value="Misto">Misto</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <div class="fl">Note</div>
+          <textarea class="fi" id="eNote" rows="2" placeholder="Note operative..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modalEdizione')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaEdizione()" id="btnSalvaEdizione">Crea edizione</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SB_URL = 'https://koshtsgvfqwuhoykfqai.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc2h0c2d2ZnF3dWhveWtmcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDg4MTQsImV4cCI6MjA5MjI4NDgxNH0.6a9t7zCVwJX3eD1dv0E2d_dR9VUH4Ie7coEUvsRiRJU';
@@ -540,7 +614,13 @@ async function init(u) {
   document.getElementById('topName').textContent = nome;
   const ruoloLabels = { superadmin:'Super Admin', admin:'Admin', operatore:'Operatore', visualizzatore:'Visualizzatore' };
   document.getElementById('sideRole').textContent = ruoloLabels[profilo?.ruolo] || profilo?.ruolo || '';
-  await Promise.all([loadTerritori(), loadPipeline()]);
+  await Promise.all([loadTerritori(), loadPipeline(), loadProfili()]);
+  // Populate anni for assegnazioni filter
+  const annoSel = document.getElementById('assAnno');
+  if (annoSel) {
+    const curr = new Date().getFullYear();
+    [curr-1,curr,curr+1].forEach(y => { const o=document.createElement('option'); o.value=y; o.textContent=y; if(y===curr)o.selected=true; annoSel.appendChild(o); });
+  }
   loadDashboard();
 }
 
@@ -554,6 +634,7 @@ const VIEW_CONFIG = {
   dashboard: { title: 'Dashboard', subtitle: 'Panoramica attività', fab: false },
   territori: { title: 'Territori', subtitle: 'Anagrafica comuni', fab: true, fabAction: ()=>openModalTerritorio() },
   pipeline: { title: 'Pipeline', subtitle: 'Gestione contatti', fab: true, fabAction: ()=>openModalFase() },
+  assegnazioni: { title: 'Assegnazioni', subtitle: 'Edizioni per territorio', fab: true, fabAction: ()=>openModalEdizione() },
 };
 
 function showView(id) {
@@ -574,6 +655,7 @@ function showView(id) {
     actions.innerHTML = '';
   }
   document.getElementById('uMenu').classList.remove('on');
+  if (id === 'assegnazioni') loadAssegnazioni();
 }
 
 function fabAction() {
@@ -728,13 +810,30 @@ function renderKanban(byFase) {
         <div class="kanban-col-title">${faseInfo.label}</div>
         <div class="kanban-col-count">${items.length}</div>
       </div>
-      <div class="kanban-col-body">
+      <div class="kanban-col-body"
+        ondragover="onDragOver(event)"
+        ondragenter="onDragEnter(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,'${faseId}')"
+        style="transition:background .15s,border-color .15s;border:2px dashed transparent;border-radius:var(--r);min-height:80px">
         ${items.map(p => `
-          <div class="kanban-card" onclick="apriScheda('${p.territorio_id}')">
-            <div class="kc-name">${p.territori?.nome||'—'}</div>
-            <div class="kc-meta">${p.territori?.provincia||''} · ${p.territori?.regione||''}</div>
-            ${p.data_fase ? `<div class="kc-date"><svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><path d="M1 5h10M4 1v2M8 1v2"/></svg>${new Date(p.data_fase).toLocaleDateString('it-IT')}</div>` : ''}
-            ${p.note ? `<div class="kc-note">${p.note}</div>` : ''}
+          <div class="kanban-card"
+            draggable="true"
+            ondragstart="onDragStart(event,'${p.id}','${p.territorio_id}')"
+            ondragend="onDragEnd(event)"
+            style="cursor:grab">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
+              <div style="flex:1;min-width:0">
+                <div class="kc-name">${p.territori?.nome||'—'}</div>
+                <div class="kc-meta">${p.territori?.provincia||''} · ${p.territori?.regione||''}</div>
+                ${p.data_fase ? `<div class="kc-date"><svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><path d="M1 5h10M4 1v2M8 1v2"/></svg>${new Date(p.data_fase).toLocaleDateString('it-IT')}</div>` : ''}
+                ${p.note ? `<div class="kc-note">${p.note}</div>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+                <button onclick="event.stopPropagation();apriScheda('${p.territorio_id}')" style="background:none;border:none;cursor:pointer;color:var(--tx3);padding:2px;font-size:12px" title="Scheda">👁</button>
+                <button onclick="event.stopPropagation();openModalEdizione(null,'${p.territorio_id}')" style="background:none;border:1px solid var(--bd2);cursor:pointer;color:var(--wcd);padding:2px 5px;font-size:9px;border-radius:5px;font-family:var(--f);font-weight:600;white-space:nowrap" title="Crea edizione">Assegna</button>
+              </div>
+            </div>
           </div>`).join('')}
         <button class="kanban-add" onclick="openModalFase(null,'${faseId}')">+ Aggiungi</button>
       </div>
@@ -861,7 +960,8 @@ async function apriScheda(id) {
         : '<div style="font-size:13px;color:var(--tx3);padding:8px 0">Nessuna fase — aggiungi la prima</div>'}
       </div>
       <div style="padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="openModalTerritorio('${id}');closeModal('modalScheda')">✏️ Modifica territorio</button>
+        <button class="btn btn-primary" onclick="openModalEdizione(null,'${id}');closeModal('modalScheda')">+ Crea edizione</button>
+        <button class="btn" onclick="openModalTerritorio('${id}');closeModal('modalScheda')">✏️ Modifica</button>
         <button class="btn" style="color:var(--red)" onclick="eliminaTerritorio('${id}');closeModal('modalScheda')">🗑️ Elimina</button>
       </div>
     </div>`;
@@ -921,6 +1021,214 @@ function toast(msg, type = '') {
 // ── EVENTS ──
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
 document.addEventListener('click', e => { if(!e.target.closest('.tb-user')) document.getElementById('uMenu').classList.remove('on'); });
+
+// ── PROFILI ──
+let allProfili = [];
+
+async function loadProfili() {
+  const { data } = await sb.from('profili').select('*').order('cognome');
+  allProfili = data || [];
+  // Populate selects
+  ['eIncaricato','assIncaricatoFilt'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const curr = sel.value;
+    const isFilter = selId === 'assIncaricatoFilt';
+    sel.innerHTML = isFilter ? '<option value="">Tutti gli incaricati</option>' : '<option value="">Seleziona incaricato...</option>';
+    allProfili.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = `${p.nome||''} ${p.cognome||''}`.trim();
+      sel.appendChild(o);
+    });
+    sel.value = curr;
+  });
+}
+
+// ── EDIZIONI ──
+let allEdizioni = [];
+let editEdizioneId = null;
+
+async function loadAssegnazioni() {
+  await loadProfili();
+  const anno = document.getElementById('assAnno')?.value;
+  const incId = document.getElementById('assIncaricatoFilt')?.value;
+  let q = sb.from('edizioni')
+    .select('*, territori(nome,regione,provincia), profili(nome,cognome)')
+    .order('anno', {ascending:false})
+    .order('created_at', {ascending:false});
+  if (anno) q = q.eq('anno', parseInt(anno));
+  if (incId) q = q.eq('incaricato_id', incId);
+  const { data } = await q;
+  allEdizioni = data || [];
+  document.getElementById('badgeAssegnazioni').textContent = allEdizioni.length;
+  renderAssegnazioni();
+}
+
+function renderAssegnazioni() {
+  const body = document.getElementById('assBody');
+  if (!allEdizioni.length) {
+    body.innerHTML = `<div class="empty-state">
+      <div class="empty-icon"><svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:var(--tx3);fill:none;stroke-width:1.5"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M19 8l2 2-5 5"/></svg></div>
+      <div class="empty-title">Nessuna edizione</div>
+      <div class="empty-desc">Crea la prima edizione assegnando un territorio a un incaricato</div>
+      <button class="btn btn-primary" onclick="openModalEdizione()">+ Nuova edizione</button>
+    </div>`;
+    return;
+  }
+  const statoColors = { attiva:'badge-blue', completata:'badge-green', annullata:'badge-red' };
+  const statoLabels = { attiva:'Attiva', completata:'Completata', annullata:'Annullata' };
+  body.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` + allEdizioni.map(e => {
+    const inc = e.profili ? `${e.profili.nome||''} ${e.profili.cognome||''}`.trim() : '—';
+    return `<div class="card" style="cursor:default">
+      <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:15px;font-weight:700;color:var(--tx);letter-spacing:-.2px">${e.territori?.nome||'—'} <span style="font-size:13px;font-weight:500;color:var(--tx3)">${e.anno}</span></div>
+          <div style="font-size:12px;color:var(--tx3);margin-top:2px">${e.territori?.regione||''} ${e.territori?.provincia?'· '+e.territori.provincia:''}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span class="badge badge-gray">👤 ${inc}</span>
+            ${e.tipo_evento?`<span class="badge badge-gray">🏥 ${e.tipo_evento}</span>`:''}
+            <span class="badge ${statoColors[e.stato]||'badge-gray'}">${statoLabels[e.stato]||e.stato}</span>
+          </div>
+          ${e.note?`<div style="font-size:12px;color:var(--tx3);margin-top:6px;font-style:italic">${e.note}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${e.stato==='attiva'?`<button class="btn btn-sm" onclick="completaEdizione('${e.id}')">✓ Completa</button>`:''}
+          <button class="btn btn-sm btn-icon" onclick="openModalEdizione('${e.id}')" title="Modifica">
+            <svg viewBox="0 0 16 16"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+          </button>
+          <button class="btn btn-sm btn-icon" style="color:var(--red)" onclick="eliminaEdizione('${e.id}')" title="Elimina">
+            <svg viewBox="0 0 16 16"><path d="M3 4h10M5 4V3h6v1M6 7v5M10 7v5M4 4l1 9h6l1-9"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+async function openModalEdizione(id = null, terrId = null) {
+  editEdizioneId = id;
+  await loadProfili();
+  // Populate territori
+  const sel = document.getElementById('eTerritorio');
+  sel.innerHTML = '<option value="">Seleziona territorio...</option>';
+  [...allTerritori].sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = `${t.nome}${t.provincia?' ('+t.provincia+')':''}`;
+    if (t.id === terrId) o.selected = true;
+    sel.appendChild(o);
+  });
+  // Populate anni
+  const annoSel = document.getElementById('eAnno');
+  annoSel.innerHTML = '';
+  const curr = new Date().getFullYear();
+  [curr-1,curr,curr+1,curr+2].forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === curr) o.selected = true;
+    annoSel.appendChild(o);
+  });
+  if (id) {
+    const e = allEdizioni.find(x=>x.id===id);
+    if (e) {
+      sel.value = e.territorio_id;
+      document.getElementById('eIncaricato').value = e.incaricato_id || '';
+      annoSel.value = e.anno;
+      document.getElementById('eTipoEvento').value = e.tipo_evento || '';
+      document.getElementById('eNote').value = e.note || '';
+    }
+    document.getElementById('modalEdizioneTitle').textContent = 'Modifica edizione';
+    document.getElementById('btnSalvaEdizione').textContent = 'Salva modifiche';
+  } else {
+    document.getElementById('eIncaricato').value = '';
+    document.getElementById('eTipoEvento').value = '';
+    document.getElementById('eNote').value = '';
+    document.getElementById('modalEdizioneTitle').textContent = 'Nuova edizione';
+    document.getElementById('btnSalvaEdizione').textContent = 'Crea edizione';
+  }
+  openModal('modalEdizione');
+}
+
+async function salvaEdizione() {
+  const terrId = document.getElementById('eTerritorio').value;
+  const incId = document.getElementById('eIncaricato').value;
+  const anno = parseInt(document.getElementById('eAnno').value);
+  if (!terrId || !incId) { toast('Seleziona territorio e incaricato', 'error'); return; }
+  const btn = document.getElementById('btnSalvaEdizione');
+  btn.disabled = true; btn.textContent = 'Salvo...';
+  const payload = {
+    territorio_id: terrId, incaricato_id: incId, anno,
+    tipo_evento: document.getElementById('eTipoEvento').value || null,
+    note: document.getElementById('eNote').value.trim() || null,
+    creato_da: user?.id,
+  };
+  if (editEdizioneId) {
+    await sb.from('edizioni').update(payload).eq('id', editEdizioneId);
+    toast('Edizione aggiornata', 'success');
+  } else {
+    await sb.from('edizioni').insert(payload);
+    toast('Edizione creata', 'success');
+  }
+  btn.disabled = false;
+  closeModal('modalEdizione');
+  await loadAssegnazioni();
+}
+
+async function completaEdizione(id) {
+  if (!confirm('Segnare questa edizione come completata?')) return;
+  await sb.from('edizioni').update({ stato:'completata' }).eq('id', id);
+  toast('Edizione completata', 'success');
+  await loadAssegnazioni();
+}
+
+async function eliminaEdizione(id) {
+  if (!confirm('Eliminare questa edizione?')) return;
+  await sb.from('edizioni').delete().eq('id', id);
+  toast('Eliminata', 'success');
+  await loadAssegnazioni();
+}
+
+// ── DRAG & DROP KANBAN ──
+let dragItem = null;
+
+function onDragStart(e, pipelineId, terrId) {
+  dragItem = { pipelineId, terrId };
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.style.opacity = '0.5';
+}
+
+function onDragEnd(e) {
+  e.target.style.opacity = '1';
+  dragItem = null;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragEnter(e) {
+  e.currentTarget.style.background = 'rgba(14,165,233,.06)';
+  e.currentTarget.style.borderColor = 'var(--wc)';
+}
+
+function onDragLeave(e) {
+  e.currentTarget.style.background = '';
+  e.currentTarget.style.borderColor = '';
+}
+
+async function onDrop(e, newFase) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  e.currentTarget.style.borderColor = '';
+  if (!dragItem) return;
+  await sb.from('pipeline').update({ fase: newFase }).eq('id', dragItem.pipelineId);
+  toast(`Spostato in "${FASI[newFase].label}"`, 'success');
+  await loadPipeline();
+}
+
+// VIEW_CONFIG already includes assegnazioni above
 
 // ── INIT ──
 (async () => {
