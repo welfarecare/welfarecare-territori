@@ -345,8 +345,8 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
           </div>
           <div class="table-wrap" style="border:none;border-radius:0;box-shadow:none">
             <table class="table">
-              <thead><tr><th>Territorio</th><th>Regione</th><th>Provincia</th><th>Abitanti</th><th>Pipeline</th></tr></thead>
-              <tbody id="dashTable"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--tx3)">Caricamento...</td></tr></tbody>
+              <thead><tr><th>Territorio</th><th>Regione</th><th>Provincia</th><th>Abitanti</th></tr></thead>
+              <tbody id="dashTable"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--tx3)">Caricamento...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -880,7 +880,6 @@ function loadDashboard() {
   const regioni = new Set(allTerritori.map(t=>t.regione).filter(Boolean)).size;
   document.getElementById('statRegioni').textContent = regioni;
   // Last 8 territories
-  const fasiMap = getFasiPerTerritorio();
   const tbody = document.getElementById('dashTable');
   if (!allTerritori.length) {
     tbody.innerHTML = `<tr><td colspan="5" class="table-empty">Nessun territorio ancora. <button class="btn btn-sm btn-primary" onclick="showView('territori')">Inizia ora →</button></td></tr>`;
@@ -896,7 +895,6 @@ function loadDashboard() {
       <td>${t.regione||'—'}</td>
       <td>${t.provincia||'—'}</td>
       <td>${t.abitanti?.toLocaleString('it-IT')||'—'}</td>
-      <td>${fasiHtml}</td>
     </tr>`;
   }).join('');
 }
