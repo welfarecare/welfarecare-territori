@@ -474,6 +474,10 @@ body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
 
       <!-- ── TERRITORI ── -->
       <div class="sec" id="s-terr">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:600;color:var(--tx)" id="terrTitle">Territori</div>
+          <button class="btn btnp" onclick="openModalTerr()" style="font-size:12px">+ Nuovo territorio</button>
+        </div>
         <div class="toolbar">
           <input class="fi" style="flex:1;min-width:140px;margin:0;font-size:14px" placeholder="Cerca comune..." id="tSearch" oninput="renderView()"/>
           <select class="fs" style="flex:1;min-width:120px" id="fReg" onchange="updateProv();renderView()">
@@ -492,7 +496,7 @@ body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
           </div>
         </div>
         <div class="card" id="vListaWrap">
-          <div class="ch"><span class="ct2" id="terrTitle">Territori</span></div>
+          <div class="ch"><span class="ct2" id="terrCount"></span></div>
           <div class="tbl-wrap">
             <table class="tbl">
               <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>P.IVA</th><th>Pipeline</th></tr></thead>
@@ -1048,15 +1052,15 @@ async function init(u){
   const nome=pr?`${pr.nome||''} ${pr.cognome||''}`.trim()||u.email:u.email;
   const ruolo=pr?.ruolo||'operatore';
   const ini=nome.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2)||'??';
-  ['topAv','sideAv'].forEach(id=>document.getElementById(id).textContent=ini);
+  ['topAv','sideAv'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});
   const mobAv=document.getElementById('mobAv');if(mobAv)mobAv.textContent=ini;
   document.getElementById('topName').textContent=nome;
-  document.getElementById('topRole').textContent=rlbl(ruolo);
-  document.getElementById('sideName').textContent=nome;
-  document.getElementById('sideRole').textContent=rlbl(ruolo);
-  document.getElementById('pEmail').value=u.email;
-  document.getElementById('pNome').value=pr?.nome||'';
-  document.getElementById('pCognome').value=pr?.cognome||'';
+  const tr=document.getElementById('topRole');if(tr)tr.textContent=rlbl(ruolo);
+  const sn=document.getElementById('sideName');if(sn)sn.textContent=nome;
+  const sr=document.getElementById('sideRole');if(sr)sr.textContent=rlbl(ruolo);
+  const pe=document.getElementById('pEmail');if(pe)pe.value=u.email;
+  const pn=document.getElementById('pNome');if(pn)pn.value=pr?.nome||'';
+  const pc=document.getElementById('pCognome');if(pc)pc.value=pr?.cognome||'';
   if(ruolo==='superadmin')document.querySelectorAll('.adm').forEach(el=>el.style.display='');
   await loadP();await loadDash();await loadTerritori();
   populateAnniSelect('prAnno');
@@ -1149,7 +1153,7 @@ function renderView(){curView==='lista'?renderLista():renderGruppo();}
 
 async function renderLista(){
   const data=getFiltered();
-  document.getElementById('terrTitle').textContent=`Territori (${data.length})`;
+  const tc=document.getElementById('terrCount');if(tc)tc.textContent=`${data.length} comuni`;
   const tb=document.getElementById('terrTb');
   const mob=document.getElementById('terrMobList');
   if(!data.length){
@@ -1896,7 +1900,7 @@ async function loadProgramma() {
   const incId = incSel.value;
 
   let q = sb.from('programma')
-    .select('*, territori(comune,provincia,regione,cap,note), profili(nome,cognome), assegnazioni(stato,tipo_evento,modalita,data_evento,range_eta,dicitura_comune,partner)')
+    .select('*, territori(comune,provincia,regione,cap,note), profili(nome,cognome)')
     .eq('anno', anno).order('ordine');
   if (incId) q = q.eq('incaricato_id', incId);
   const { data } = await q;
@@ -1939,10 +1943,9 @@ function programmaItem(r, n) {
   const t = r.territori;
   const sp = statoClass(r.stato);
   const slbl = statoLabel(r.stato);
-  const ass = r.assegnazioni?.[0];
   const dataEvento = r.data_evento ? new Date(r.data_evento).toLocaleDateString('it-IT') : null;
-  const tipoEvento = ass?.tipo_evento || null;
-  const modalita = ass ? {'patrocinio':'🏛️','suolo_pubblico':'🏙️','location_privata':'🏢'}[ass.modalita]||'' : '';
+  const tipoEvento = r.note ? r.note.replace(/^[📋🆕]\s*/,'').split('·')[0].trim() : null;
+  const modalita = '';
 
   return `<div class="drag-item" draggable="true" data-id="${r.id}">
     <span class="drag-handle">⠿</span>
@@ -2265,7 +2268,7 @@ function navTo(id) {
   
   // Subbar actions
   const actions = document.getElementById('subbarActions');
-  if (id==='terr') actions.innerHTML = '<button class="btn btnp" onclick="openModalTerr()" style="font-size:12px">+ Nuovo territorio</button>';
+  if (id==='terr') actions.innerHTML = '';
   if (id==='pipeline') actions.innerHTML = '<button class="btn btnp" onclick="apriModalFase()" style="font-size:12px">+ Aggiungi fase</button>';
   else if (id==='assegnazioni') actions.innerHTML = '<button class="btn btnp" onclick="apriModalAssegnazione()" style="font-size:12px">+ Nuova assegnazione</button>';
   else if (id==='programma') actions.innerHTML = '<button class="btn btns" onclick="apriModalAggiuntaProgramma()" style="font-size:11px">+ Aggiungi comune</button>';
@@ -2301,6 +2304,197 @@ document.addEventListener('click', e => {
 
 
 // ── SESSION ───────────────────────────────────────────
+// ─── ASSEGNAZIONI ────────────────────────────────────
+let assEditId = null;
+let assComuniScelti = [];
+
+function apriModalAssegnazione(editId = null) {
+  assEditId = editId;
+  assComuniScelti = [];
+  document.getElementById('mAssTitle').textContent = editId ? 'Modifica assegnazione' : 'Nuova assegnazione';
+  populateIncaricatiSelect('assIncaricatoSel');
+  populateAnniSelect('assAnnoSel');
+  const sel = document.getElementById('assComuneSel');
+  sel.innerHTML = '<option value="">Seleziona comune...</option>';
+  [...allT].sort((a,b)=>a.comune.localeCompare(b.comune)).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = `${t.comune} (${t.provincia})`;
+    sel.appendChild(o);
+  });
+  ['assDataPatr','assDataEvento','assLocationNome','assDicitura','assNote','assPartner'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  const ins = document.getElementById('assInserire');
+  if(ins) ins.value = 'Logo APS WelfareCare';
+  const re = document.getElementById('assRangeEta'); if(re) re.value = '';
+  const te = document.getElementById('assTipoEvento'); if(te) te.value = '';
+  const st = document.getElementById('assStato'); if(st) st.value = 'bozza';
+  const radPub = document.querySelector('input[name="assModalita"][value="patrocinio"]');
+  if(radPub) radPub.checked = true;
+  renderAssComuniScelti();
+  document.getElementById('mAssegnazione').classList.add('on');
+}
+
+function aggiungiComuneAss() {
+  const sel = document.getElementById('assComuneSel');
+  const id = sel.value; if(!id) return;
+  if(assComuniScelti.find(c=>c.id===id)){toast('Comune già aggiunto','error');return;}
+  const t = allT.find(x=>x.id===id); if(!t) return;
+  assComuniScelti.push({id:t.id,comune:t.comune,provincia:t.provincia});
+  sel.value = '';
+  renderAssComuniScelti();
+  const dic = document.getElementById('assDicitura');
+  if(dic && !dic.value && assComuniScelti.length===1)
+    dic.value = `Con il Patrocinio del Comune di ${t.comune} (${t.provincia})`;
+}
+
+function renderAssComuniScelti() {
+  const div = document.getElementById('assComuniScelti');
+  if(!div) return;
+  if(!assComuniScelti.length){
+    div.innerHTML='<div style="font-size:11px;color:var(--tx3);padding:6px 0">Nessun comune selezionato</div>';
+    return;
+  }
+  div.innerHTML = assComuniScelti.map(c=>`
+    <span style="display:inline-flex;align-items:center;gap:5px;background:var(--wcl);color:var(--wcd);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:500">
+      ${c.comune} (${c.provincia})
+      <button onclick="rimuoviComuneAss('${c.id}')" style="background:none;border:none;color:var(--wcd);cursor:pointer;font-size:12px;padding:0;line-height:1">✕</button>
+    </span>`).join('');
+}
+
+function rimuoviComuneAss(id) {
+  assComuniScelti = assComuniScelti.filter(c=>c.id!==id);
+  renderAssComuniScelti();
+}
+
+async function salvaAssegnazione() {
+  if(!assComuniScelti.length){toast('Seleziona almeno un comune','error');return;}
+  const incId = document.getElementById('assIncaricatoSel').value;
+  const anno = parseInt(document.getElementById('assAnnoSel').value);
+  if(!incId){toast('Seleziona un incaricato','error');return;}
+  const modalita = document.querySelector('input[name="assModalita"]:checked')?.value||'patrocinio';
+  const btn = document.getElementById('btnSalvaAss');
+  if(btn){btn.textContent='Salvo...';btn.disabled=true;}
+  const basePayload = {
+    incaricato_id:incId, anno, modalita,
+    location_nome:document.getElementById('assLocationNome')?.value.trim()||null,
+    data_patrocinio:document.getElementById('assDataPatr')?.value||null,
+    data_evento:document.getElementById('assDataEvento')?.value||null,
+    range_eta:document.getElementById('assRangeEta')?.value||null,
+    tipo_evento:document.getElementById('assTipoEvento')?.value||null,
+    dicitura_comune:document.getElementById('assDicitura')?.value.trim()||null,
+    inserire:document.getElementById('assInserire')?.value.trim()||null,
+    partner:document.getElementById('assPartner')?.value.trim()||null,
+    stato:document.getElementById('assStato')?.value||'bozza',
+    note:document.getElementById('assNote')?.value.trim()||null,
+    creato_da:user?.id,
+  };
+  let errors=[];
+  for(const c of assComuniScelti){
+    const{error}=await sb.from('assegnazioni').insert({...basePayload,territorio_id:c.id});
+    if(error) errors.push(c.comune);
+  }
+  if(btn){btn.textContent='Salva assegnazione';btn.disabled=false;}
+  if(errors.length){toast(`Errore su: ${errors.join(', ')}`,'error');return;}
+  toast(`${assComuniScelti.length} assegnazion${assComuniScelti.length===1?'e':'i'} salvat${assComuniScelti.length===1?'a':'e'}`,'success');
+  closeM('mAssegnazione');
+  await loadAssegnazioni();
+}
+
+async function loadAssegnazioni() {
+  const annSel = document.getElementById('assFilterAnno');
+  if(annSel && annSel.options.length<2) populateAnniSelect('assFilterAnno',true);
+  populateIncaricatiSelect('assFilterInc');
+  const anno = document.getElementById('assFilterAnno')?.value;
+  const incId = document.getElementById('assFilterInc')?.value;
+  const stato = document.getElementById('assFilterStato')?.value;
+  const q = document.getElementById('assSearch')?.value.toLowerCase()||'';
+  let query = sb.from('assegnazioni')
+    .select('*, territori(comune,provincia,regione,cap,note), profili(nome,cognome)')
+    .order('created_at',{ascending:false});
+  if(anno) query=query.eq('anno',parseInt(anno));
+  if(incId) query=query.eq('incaricato_id',incId);
+  if(stato) query=query.eq('stato',stato);
+  const{data}=await query;
+  let filtered=(data||[]);
+  if(q) filtered=filtered.filter(a=>(a.territori?.comune||'').toLowerCase().includes(q)||(a.territori?.provincia||'').toLowerCase().includes(q));
+  const badge=document.getElementById('assBadge');
+  if(badge) badge.textContent=filtered.length;
+  const dot=document.getElementById('assDot');
+  if(dot){dot.style.display=filtered.length>0?'block':'none';dot.textContent=filtered.length;}
+  const body=document.getElementById('assBody');
+  if(!body)return;
+  if(!filtered.length){body.innerHTML='<div class="empty">Nessuna assegnazione trovata.<br>Clicca "+ Nuova assegnazione" per iniziare.</div>';return;}
+  const modLabels={patrocinio:'🏛️ Patrocinio',suolo_pubblico:'🏙️ Suolo pubblico',location_privata:'🏢 Location privata'};
+  const statoLabels={bozza:'Bozza',confermata:'Confermata',in_lavorazione:'In lavorazione',completata:'Completata'};
+  body.innerHTML=filtered.map(a=>{
+    const t=a.territori;
+    const inc=a.profili?`${a.profili.nome||''} ${a.profili.cognome||''}`.trim():'—';
+    const mod=a.modalita?(modLabels[a.modalita]||a.modalita):'—';
+    const locNome=a.location_nome?` — ${a.location_nome}`:'';
+    const statoLabel=statoLabels[a.stato]||a.stato;
+    return`<div class="ass-card">
+      <div class="ass-head" onclick="toggleAssCard(this)">
+        <div style="flex:1">
+          <div class="ass-comune">${t?.comune||'—'} <span style="font-size:12px;color:var(--tx3);font-weight:400">(${t?.provincia||'—'})</span></div>
+          <div class="ass-meta">${a.anno} · ${inc} · ${mod}${locNome}</div>
+        </div>
+        <span class="ass-stato ass-s-${a.stato}">${statoLabel}</span>
+        <span style="color:var(--tx3);font-size:16px;margin-left:8px">›</span>
+      </div>
+      <div class="ass-body" style="display:none">
+        <div class="ass-field"><div class="ass-label">Tipo evento</div><div class="ass-value">${a.tipo_evento||'—'}</div></div>
+        <div class="ass-field"><div class="ass-label">Range d'età</div><div class="ass-value">${a.range_eta||'—'}</div></div>
+        <div class="ass-field"><div class="ass-label">Data patrocinio</div><div class="ass-value">${a.data_patrocinio?new Date(a.data_patrocinio).toLocaleDateString('it-IT'):'—'}</div></div>
+        <div class="ass-field"><div class="ass-label">Data evento</div><div class="ass-value">${a.data_evento?new Date(a.data_evento).toLocaleDateString('it-IT'):'—'}</div></div>
+        <div class="ass-field"><div class="ass-label">Dicitura comune</div><div class="ass-value">${a.dicitura_comune||'—'}</div></div>
+        <div class="ass-field"><div class="ass-label">Inserire</div><div class="ass-value">${a.inserire||'—'}</div></div>
+        ${a.note?`<div class="ass-field" style="grid-column:1/-1"><div class="ass-label">Note</div><div class="ass-value">${a.note}</div></div>`:''}
+      </div>
+      <div class="ass-foot" style="display:none">
+        <span class="mod-badge mod-${a.modalita||'patrocinio'}">${mod}</span>
+        <div style="flex:1"></div>
+        <button class="btn btns" style="font-size:10px;padding:3px 8px" onclick="cambiaStatoAss('${a.id}','${a.stato}')">Cambia stato</button>
+        <button class="btn btns" style="font-size:10px;padding:3px 8px;color:#dc2626" onclick="eliminaAss('${a.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAssCard(head){
+  const body=head.nextElementSibling;
+  const foot=body.nextElementSibling;
+  const arrow=head.querySelector('span:last-child');
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'grid';
+  foot.style.display=open?'none':'flex';
+  arrow.textContent=open?'›':'⌄';
+}
+
+async function cambiaStatoAss(id,statoAttuale){
+  const stati=['bozza','confermata','in_lavorazione','completata'];
+  const labels={bozza:'Bozza',confermata:'Confermata',in_lavorazione:'In lavorazione',completata:'Completata'};
+  const prossimo=stati[(stati.indexOf(statoAttuale)+1)%stati.length];
+  if(!confirm(`Cambiare stato a "${labels[prossimo]}"?`))return;
+  await sb.from('assegnazioni').update({stato:prossimo}).eq('id',id);
+  toast(`Stato: ${labels[prossimo]}`,'success');
+  await loadAssegnazioni();
+}
+
+async function eliminaAss(id){
+  if(!confirm('Eliminare questa assegnazione?'))return;
+  await sb.from('assegnazioni').delete().eq('id',id);
+  toast('Eliminata','success');
+  await loadAssegnazioni();
+}
+
+async function apriStorico(territorioId){
+  const t=allT.find(x=>x.id===territorioId);
+  if(!t)return;
+  closeM('mAssegnazione');
+  await apriScheda(territorioId);
+}
+
 // ─── PIPELINE ────────────────────────────────────────
 const FASI = [
   { id:'da_contattare',    label:'Da contattare',       color:'#94a3b8', bg:'#f1f5f9' },
