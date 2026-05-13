@@ -2,127 +2,168 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>WelfareCare — Gestionale Territori</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--wc:#26ADE4;--wcd:#1a8fc2;--wcl:#e8f6fc;--wcm:#b3e2f5;--bg:#f5f6f8;--sur:#fff;--sur2:#f9f9fb;--bd:rgba(0,0,0,.08);--bd2:rgba(0,0,0,.13);--tx:#111;--tx2:#5a6072;--tx3:#9da3b0;--f:'Poppins',sans-serif;--r:8px;--rl:12px}
-body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --wc:#26ADE4;--wcd:#1a8fc2;--wcl:#e8f6fc;--wcm:#b3e2f5;
+  --bg:#f0f4f8;--sur:#fff;--sur2:#f7f9fb;
+  --bd:rgba(0,0,0,.07);--bd2:rgba(0,0,0,.12);
+  --tx:#0d1117;--tx2:#4a5568;--tx3:#94a3b8;
+  --f:'Poppins',sans-serif;--r:10px;--rl:16px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --nav-h:60px;--top-h:52px;
+}
+html,body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100%;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
 
-/* COMMON */
-.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
-.fl{font-size:11px;font-weight:500;color:var(--tx2)}
-.fi{font-family:var(--f);font-size:12px;padding:9px 11px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none;transition:border-color .15s}
-.fi:focus{border-color:var(--wc)}
-.fi:disabled{opacity:.5}
-.fs{font-family:var(--f);font-size:12px;padding:9px 11px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none}
-.btn{font-family:var(--f);font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx);transition:all .15s}
-.btn:hover{background:var(--sur2)}
-.btnp{background:var(--wc);color:#fff;border-color:var(--wc)}
-.btnp:hover{background:var(--wcd)}
-.btns{color:var(--tx2);border-color:var(--bd);font-size:11px;padding:5px 10px}
-/* APP */
-.app{display:flex;flex-direction:column;height:100vh}
-/* TOPNAV */
-.tn{height:52px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0}
-.tn-div{width:1px;height:22px;background:var(--bd2);flex-shrink:0}
-.tn-dept{font-size:11px;font-weight:500;color:var(--wcd);background:var(--wcl);padding:3px 10px;border-radius:20px;white-space:nowrap}
+/* ── TOPBAR ── */
+.tn{height:var(--top-h);background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;position:sticky;top:0;z-index:100}
+.tn-back{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx3);text-decoration:none;padding:6px 8px;border-radius:var(--r);transition:background .15s;white-space:nowrap}
+.tn-back:hover,.tn-back:active{background:var(--sur2)}
+.tn-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.tn-div{width:1px;height:20px;background:var(--bd2);flex-shrink:0}
+.tn-logo{display:flex;align-items:center}
+.tn-logo svg{width:130px;height:20px}
+.tn-dept{font-size:10px;font-weight:500;color:var(--wcd);background:var(--wcl);padding:3px 9px;border-radius:20px;white-space:nowrap}
 .tn-sp{flex:1}
 .tn-srch{display:flex;align-items:center;gap:7px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);padding:0 11px;height:32px}
-.tn-srch input{border:none;background:transparent;font-family:var(--f);font-size:12px;color:var(--tx);width:190px;outline:none}
+.tn-srch input{border:none;background:transparent;font-family:var(--f);font-size:12px;color:var(--tx);width:160px;outline:none}
 .tn-srch svg{width:12px;height:12px;color:var(--tx3);flex-shrink:0}
-.tn-u{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:var(--r);position:relative}
+.tn-u{display:flex;align-items:center;gap:7px;cursor:pointer;padding:4px 8px;border-radius:var(--r);position:relative}
 .tn-u:hover{background:var(--sur2)}
 .av{width:30px;height:30px;border-radius:50%;background:var(--wc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0}
-.umenu{position:absolute;top:calc(100% + 6px);right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:6px;min-width:150px;display:none;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.tn-uname{font-size:12px;font-weight:500;color:var(--tx)}
+.umenu{position:absolute;top:calc(100% + 6px);right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:6px;min-width:150px;display:none;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.1)}
 .umenu.on{display:block}
-.umi{padding:8px 12px;font-size:12px;color:var(--tx2);border-radius:var(--r);cursor:pointer}
+.umi{padding:9px 12px;font-size:12px;color:var(--tx2);border-radius:var(--r);cursor:pointer}
 .umi:hover{background:var(--sur2);color:var(--tx)}
-.umi.red{color:#a32d2d}.umi.red:hover{background:#fcebeb}
-/* BODY */
-.bd{display:flex;flex:1;overflow:hidden}
+.umi.red{color:#dc2626}.umi.red:hover{background:#fee2e2}
+
+/* ── LAYOUT ── */
+.app-body{display:flex;flex:1;overflow:hidden;height:calc(100vh - var(--top-h))}
 .side{width:210px;background:var(--sur);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 .snl{font-size:9px;font-weight:600;color:var(--tx3);letter-spacing:.07em;text-transform:uppercase;padding:14px 14px 4px}
-.ni{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--tx2);transition:background .12s}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;margin:1px 8px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--tx2);transition:background .12s;border:none;background:none;font-family:var(--f);width:calc(100% - 16px)}
 .ni:hover{background:var(--sur2);color:var(--tx)}
 .ni.on{background:var(--wcl);color:var(--wcd);font-weight:500}
-.ni svg{width:14px;height:14px;flex-shrink:0}
+.ni svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.5}
 .nib{margin-left:auto;background:var(--wc);color:#fff;font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px}
-.sf{margin-top:auto;border-top:1px solid var(--bd);padding:12px 14px;display:flex;align-items:center;gap:9px}
+.side-foot{margin-top:auto;border-top:1px solid var(--bd);padding:12px 14px;display:flex;align-items:center;gap:9px}
 
-/* MAIN */
-.mn{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.sb{height:52px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 22px;gap:12px;flex-shrink:0}
-.sb-l{flex:1;min-width:0}
-.sb-cr{font-size:10px;color:var(--tx3);margin-bottom:1px}
-.sb-cr span{color:var(--wc)}
-.sb-tt{font-size:15px;font-weight:600;color:var(--tx)}
-.sb-a{display:flex;gap:8px;flex-shrink:0}
-.ct{flex:1;overflow-y:auto;padding:22px}
-.sec{display:none}.sec.on{display:block}.sec.on#s-mappa{display:flex}
-/* KPIS */
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
-.kpi{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px}
-.kl{font-size:11px;color:var(--tx2);font-weight:500;margin-bottom:4px}
-.kv{font-size:24px;font-weight:600;color:var(--tx);line-height:1}
-.ks{font-size:10px;color:var(--tx3);margin-top:4px}
-.kdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--wc);margin-right:3px;vertical-align:middle}
-/* CARDS */
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.subbar{height:50px;background:var(--sur);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
+.subbar-title{font-size:14px;font-weight:600;color:var(--tx);flex:1}
+.content{flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
+.sec{display:none}.sec.on{display:block}
+.sec.on#s-mappa{display:flex;flex-direction:column}
+
+/* ── BOTTOM NAV (mobile only) ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bd);z-index:200;padding-bottom:var(--safe-b)}
+.bn-wrap{display:flex;justify-content:space-around}
+.bn-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;flex:1;border:none;background:none;font-family:var(--f);color:var(--tx3);font-size:9px;font-weight:500;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent}
+.bn-btn.on{color:var(--wc)}
+.bn-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5}
+.bn-dot{position:absolute;top:7px;right:calc(50% - 14px);background:var(--wc);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:10px;min-width:14px;text-align:center;line-height:1.4}
+
+/* ── FAB ── */
+.fab{display:none;position:fixed;bottom:calc(var(--nav-h) + 12px + var(--safe-b));right:16px;width:52px;height:52px;border-radius:50%;background:var(--wc);color:#fff;border:none;font-size:24px;cursor:pointer;z-index:150;box-shadow:0 4px 16px rgba(38,173,228,.4);align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
+.fab:active{transform:scale(.95);box-shadow:0 2px 8px rgba(38,173,228,.4)}
+
+/* ── COMMON ── */
+.btn{font-family:var(--f);font-size:12px;font-weight:500;padding:8px 14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx);transition:all .15s;display:inline-flex;align-items:center;gap:6px;touch-action:manipulation}
+.btn:active{opacity:.8}
+.btnp{background:var(--wc);color:#fff;border-color:var(--wc)}
+.btnp:hover{background:var(--wcd)}
+.btns{color:var(--tx2);border-color:var(--bd);font-size:11px;padding:6px 11px}
+.btnd{background:#dc2626;color:#fff;border-color:#dc2626}
+.fi{font-family:var(--f);font-size:14px;padding:11px 13px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none;transition:border-color .15s;-webkit-appearance:none}
+.fi:focus{border-color:var(--wc);box-shadow:0 0 0 3px rgba(38,173,228,.1)}
+.fs{font-family:var(--f);font-size:14px;padding:11px 13px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);color:var(--tx);width:100%;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fl{font-size:11px;font-weight:500;color:var(--tx2);letter-spacing:.01em}
+
+/* ── CARDS ── */
 .card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
 .card:last-child{margin-bottom:0}
-.ch{padding:13px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ch{padding:13px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ct2{font-size:13px;font-weight:600;color:var(--tx)}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-/* TABLE */
-.ts{overflow-x:auto}
+
+/* ── TABLE (desktop) ── */
+.tbl-wrap{overflow-x:auto}
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{padding:8px 14px;text-align:left;font-weight:500;font-size:10px;color:var(--tx2);background:var(--sur2);border-bottom:1px solid var(--bd);white-space:nowrap}
-.tbl td{padding:8px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl th{padding:8px 14px;text-align:left;font-weight:500;font-size:10px;color:var(--tx3);background:var(--sur2);border-bottom:1px solid var(--bd);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:var(--sur2);cursor:pointer}
-/* BADGES */
-.bx{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
-.bg{background:#eaf3de;color:#3b6d11}.ba{background:#faeeda;color:#854f0b}
-.bb{background:var(--wcl);color:var(--wcd)}.br{background:#fcebeb;color:#a32d2d}
-.bk{background:var(--sur2);color:var(--tx2);border:1px solid var(--bd)}.bwc{background:var(--wc);color:#fff}
-/* TOOLBAR */
-.toolbar{display:flex;align-items:center;gap:9px;margin-bottom:14px;flex-wrap:wrap}
+
+/* ── MOB CARDS (mobile list alternative) ── */
+.mob-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .12s;-webkit-tap-highlight-color:transparent}
+.mob-card:active{background:var(--sur2);transform:scale(.99)}
+.mc-title{font-size:15px;font-weight:600;color:var(--tx);margin-bottom:3px}
+.mc-sub{font-size:12px;color:var(--tx3);margin-bottom:8px}
+.mc-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+/* ── KPI ── */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.kpi{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:16px}
+.kl{font-size:10px;color:var(--tx3);font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.kv{font-size:26px;font-weight:700;color:var(--tx);line-height:1}
+.ks{font-size:10px;color:var(--tx3);margin-top:4px;display:flex;align-items:center;gap:4px}
+.kdot{width:6px;height:6px;border-radius:50%;background:var(--wc)}
+
+/* ── BADGES ── */
+.bx{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px}
+.bg{background:#d1fae5;color:#065f46}.ba{background:#fef3c7;color:#92400e}
+.bb{background:var(--wcl);color:var(--wcd)}.br{background:#fee2e2;color:#dc2626}
+.bk{background:var(--sur2);color:var(--tx2);border:1px solid var(--bd)}
+.bwc{background:var(--wc);color:#fff}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .tb-sp{flex:1}
 .vt{display:flex;border:1px solid var(--bd2);border-radius:var(--r);overflow:hidden}
-.vtb{padding:6px 12px;font-size:11px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--tx2);font-family:var(--f);display:flex;align-items:center;gap:5px}
+.vtb{padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--tx2);font-family:var(--f);display:flex;align-items:center;gap:5px;touch-action:manipulation}
 .vtb.on{background:var(--wc);color:#fff}
-.vtb:not(.on):hover{background:var(--sur2)}
-/* GRUPPI */
-.rblock{margin-bottom:16px}
-.rhdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer}
-.rhdr:hover{background:var(--sur2)}
+.vtb svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5}
+
+/* ── GRUPPI ── */
+.rblock{margin-bottom:14px}
+.rhdr{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;touch-action:manipulation}
+.rhdr:active{background:var(--sur2)}
 .rn{font-size:13px;font-weight:600;color:var(--tx);flex:1}
 .rc{font-size:11px;color:var(--tx3)}
 .pblock{margin-left:14px;margin-bottom:3px}
-.phdr{display:flex;align-items:center;gap:8px;padding:8px 13px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;margin-bottom:2px}
-.phdr:hover{background:#ebebeb}
+.phdr{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;margin-bottom:2px}
 .pn{font-size:12px;font-weight:500;color:var(--tx2);flex:1}
-.crow{margin-left:28px;display:flex;align-items:center;gap:10px;padding:8px 13px;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:2px;cursor:pointer;font-size:12px}
-.crow:hover{background:var(--wcl);border-color:var(--wcm)}
+.crow{margin-left:24px;display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:2px;cursor:pointer;font-size:12px;touch-action:manipulation}
+.crow:active{background:var(--wcl)}
 .cn{font-weight:500;color:var(--tx);flex:1}
 .chip{display:inline-flex;align-items:center;background:var(--sur2);border:1px solid var(--bd);border-radius:20px;padding:2px 8px;font-size:10px;color:var(--tx2)}
-/* MODAL */
-.mbg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+
+/* ── MODAL ── */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:flex-end;justify-content:center;padding:0}
 .mbg.on{display:flex}
-.modal{background:var(--sur);border-radius:var(--rl);width:640px;max-width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--bd)}
-.mh{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:1}
-.mt{font-size:14px;font-weight:600;color:var(--tx)}
-.mc{background:none;border:none;font-size:20px;color:var(--tx3);cursor:pointer;padding:2px 7px;border-radius:var(--r);line-height:1}
-.mc:hover{background:var(--sur2)}
-.mb{padding:20px}
-.mf{padding:13px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--sur)}
+.modal{background:var(--sur);border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;border:1px solid var(--bd);box-shadow:0 -8px 40px rgba(0,0,0,.15);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mh{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:1;border-radius:20px 20px 0 0}
+.mh::before{content:'';display:block;width:36px;height:4px;background:var(--bd2);border-radius:2px;position:absolute;top:8px;left:50%;transform:translateX(-50%)}
+.mt{font-size:15px;font-weight:600;color:var(--tx);padding-top:8px}
+.mc{background:none;border:none;font-size:22px;color:var(--tx3);cursor:pointer;padding:4px 8px;border-radius:var(--r);line-height:1;touch-action:manipulation}
+.mb{padding:18px 20px}
+.mf{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--sur);padding-bottom:calc(14px + var(--safe-b))}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fgrid .full{grid-column:1/-1}
 .slbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
 .slbl:first-child{margin-top:0}
-/* SCHEDA */
+
+/* ── SCHEDA ── */
 .sgrid{display:grid;grid-template-columns:1fr 1fr}
 .sf2{padding:12px 16px;border-bottom:1px solid var(--bd)}
 .sf2:nth-child(odd){border-right:1px solid var(--bd)}
@@ -130,69 +171,41 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 .slb{font-size:9px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
 .sv{font-size:13px;color:var(--tx)}
 .sv.big{font-size:22px;font-weight:600;color:var(--wc)}
-/* BUDGET */
+
+/* ── BUDGET ── */
 .brow{display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--bd);font-size:12px}
 .brow:last-child{border-bottom:none}
 .banno{font-weight:600;color:var(--tx);width:44px}
 .bbar{flex:1;height:5px;background:var(--sur2);border-radius:3px;overflow:hidden}
 .bfill{height:100%;border-radius:3px;background:var(--wc)}
-.bimp{font-weight:500;color:var(--tx);min-width:100px;text-align:right}
-/* MISC */
-.empty{text-align:center;padding:36px;color:var(--tx3);font-size:12px}
-.loading{text-align:center;padding:28px;color:var(--tx3);font-size:12px}
-.leaflet-popup-content-wrapper{font-family:var(--f);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid var(--bd)}
-.leaflet-popup-content{margin:12px 16px;font-size:12px;color:var(--tx);min-width:160px}
-.map-popup-title{font-weight:600;font-size:13px;color:var(--tx);margin-bottom:4px}
-.map-popup-meta{color:var(--tx3);font-size:11px;margin-bottom:8px}
-.map-popup-stato{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-bottom:8px}
-.map-popup-btn{font-family:var(--f);font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;cursor:pointer;border:1px solid var(--wc);background:transparent;color:var(--wc);width:100%;transition:all .15s}
-.map-popup-btn:hover{background:var(--wcl)}
-.toast{position:fixed;bottom:22px;right:22px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none}
-.toast.success{background:#3b6d11}.toast.error{background:#a32d2d}
-::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
-/* PROGRAMMA */
+.bimp{font-weight:500;color:var(--tx);min-width:90px;text-align:right}
+
+/* ── PROGRAMMA ── */
 .inc-block{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:16px;overflow:hidden}
 .inc-hdr{padding:13px 18px;background:var(--wcl);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
 .inc-av{width:32px;height:32px;border-radius:50%;background:var(--wc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0}
 .inc-name{font-size:13px;font-weight:600;color:var(--wcd);flex:1}
 .inc-count{font-size:11px;color:var(--wcd)}
-.drag-list{padding:8px 0;min-height:48px}
-.drag-item{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--bd);cursor:grab;transition:background .12s;user-select:none}
+.drag-list{padding:6px 0;min-height:48px}
+.drag-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bd);cursor:grab;transition:background .12s;user-select:none}
 .drag-item:last-child{border-bottom:none}
-.drag-item:hover{background:var(--sur2)}
+.drag-item:active{background:var(--sur2)}
 .drag-item.dragging{opacity:.4;background:var(--wcl)}
-.drag-item.drag-over{border-top:2px solid var(--wc)}
-.drag-handle{color:var(--tx3);font-size:16px;flex-shrink:0;cursor:grab}
+.drag-handle{color:var(--tx3);font-size:16px;flex-shrink:0}
 .drag-num{width:24px;height:24px;border-radius:50%;background:var(--wc);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .drag-info{flex:1;min-width:0}
 .drag-comune{font-size:12px;font-weight:500;color:var(--tx)}
 .drag-sub{font-size:10px;color:var(--tx3)}
-.drag-actions{display:flex;gap:6px;flex-shrink:0}
-.stato-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px;cursor:pointer;border:none;font-family:var(--f)}
+.drag-actions{display:flex;gap:5px;flex-shrink:0}
+.stato-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px;cursor:pointer;border:none;font-family:var(--f);touch-action:manipulation}
 .sp-pian{background:#e8f6fc;color:#1a8fc2}
-.sp-corso{background:#faeeda;color:#854f0b}
-.sp-comp{background:#eaf3de;color:#3b6d11}
-/* WIZARD */
-.wz-step{color:var(--tx3);transition:background .15s}
-.wz-step.on{background:var(--wcl);color:var(--wcd)}
-.wz-step.done{background:#eaf3de;color:#3b6d11}
-.wz-num{width:22px;height:22px;border-radius:50%;background:var(--bd2);color:var(--tx3);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.wz-step.on .wz-num{background:var(--wc);color:#fff}
-.wz-step.done .wz-num{background:#3b6d11;color:#fff}
-.wz-comune-row{cursor:pointer;transition:background .1s}
-.wz-comune-row:hover td{background:var(--wcl)}
-.wz-comune-row.selected td{background:#eaf3de}
-.sel-item{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bd);font-size:12px}
-.sel-item:last-child{border-bottom:none}
-.sel-handle{color:var(--tx3);cursor:grab;font-size:14px}
-.sel-num{width:20px;height:20px;border-radius:50%;background:var(--wc);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sel-nome{flex:1;font-weight:500;font-size:11px;color:var(--tx)}
-.sel-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px}
-.sel-rm:hover{color:#a32d2d;background:#fcebeb}
-/* ARCHIVIO */
-.ass-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:12px;overflow:hidden;transition:box-shadow .15s}
-.ass-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
-.ass-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
+.sp-corso{background:#fef3c7;color:#92400e}
+.sp-comp{background:#d1fae5;color:#065f46}
+
+/* ── ASSEGNAZIONI ── */
+.ass-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:12px;overflow:hidden}
+.ass-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bd);cursor:pointer;touch-action:manipulation}
+.ass-head:active{background:var(--sur2)}
 .ass-stato{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;flex-shrink:0}
 .ass-s-bozza{background:#f1f5f9;color:#64748b}
 .ass-s-confermata{background:var(--wcl);color:var(--wcd)}
@@ -200,304 +213,381 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 .ass-s-completata{background:#d1fae5;color:#065f46}
 .ass-comune{font-size:14px;font-weight:600;color:var(--tx)}
 .ass-meta{font-size:11px;color:var(--tx3);margin-top:3px}
-.ass-body{padding:14px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ass-body{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ass-field{display:flex;flex-direction:column;gap:3px}
 .ass-label{font-size:9px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em}
 .ass-value{font-size:12px;color:var(--tx)}
-.ass-foot{padding:10px 16px;border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center}
+.ass-foot{padding:10px 16px;border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .mod-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px}
 .mod-patrocinio{background:#e0e7ff;color:#3730a3}
 .mod-suolo_pubblico{background:#fef3c7;color:#92400e}
 .mod-location_privata{background:#d1fae5;color:#065f46}
-.arch-year-block{margin-bottom:18px}
-.arch-year-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;margin-bottom:4px}
-.arch-year-hdr:hover{background:#ebebeb}
-.arch-year-lbl{font-size:13px;font-weight:600;color:var(--tx);flex:1}
-.arch-year-cnt{font-size:11px;color:var(--tx3)}
-.add-comune-row{display:flex;align-items:center;gap:8px;padding:10px 18px;border-top:1px solid var(--bd);background:var(--sur2)}
+
+/* ── WIZARD PROGRAMMA ── */
+.wz-step{color:var(--tx3);transition:background .15s}
+.wz-step.on{background:var(--wcl);color:var(--wcd)}
+.wz-step.done{background:#d1fae5;color:#065f46}
+.wz-num{width:22px;height:22px;border-radius:50%;background:var(--bd2);color:var(--tx3);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wz-step.on .wz-num{background:var(--wc);color:#fff}
+.wz-step.done .wz-num{background:#065f46;color:#fff}
+.sel-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--bd);font-size:12px}
+.sel-item:last-child{border-bottom:none}
+.sel-handle{color:var(--tx3);cursor:grab;font-size:14px}
+.sel-num{width:20px;height:20px;border-radius:50%;background:var(--wc);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sel-nome{flex:1;font-weight:500;font-size:11px;color:var(--tx)}
+.sel-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;touch-action:manipulation}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:36px;color:var(--tx3);font-size:12px;line-height:1.6}
+.loading{text-align:center;padding:28px;color:var(--tx3);font-size:12px}
+.toast{position:fixed;bottom:calc(var(--nav-h) + 12px + var(--safe-b));left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;padding:12px 20px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap;max-width:90vw}
+.toast.success{background:#059669}.toast.error{background:#dc2626}
+
+/* ── LEAFLET ── */
+.leaflet-popup-content-wrapper{font-family:var(--f);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.leaflet-popup-content{margin:12px 16px;font-size:12px;color:var(--tx);min-width:160px}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media(max-width:768px){
+  /* Layout */
+  .app-body{height:calc(100vh - var(--top-h));overflow:hidden}
+  .side{display:none}
+  .main{overflow:hidden}
+  .subbar{display:none}
+  .content{padding:14px 12px;padding-bottom:calc(var(--nav-h) + 20px + var(--safe-b));height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+  /* Show mobile nav */
+  .bottom-nav{display:block}
+  .fab{display:flex}
+
+  /* Topnav */
+  .tn{padding:0 12px;gap:8px;height:52px}
+  .tn-dept,.tn-srch{display:none}
+  .tn-uname{display:none}
+  .tn-div:last-of-type{display:none}
+
+  /* Tables hidden → cards shown */
+  .tbl-wrap,.tbl{display:none}
+  .mob-list{display:block!important}
+
+  /* Modal full bottom sheet */
+  .mbg{align-items:flex-end}
+  .modal{width:100%!important;max-width:100%!important;border-radius:20px 20px 0 0!important;max-height:90vh}
+
+  /* Grid → 1 col */
+  .fgrid{grid-template-columns:1fr}
+  .fgrid .full{grid-column:1}
+  .kpis{grid-template-columns:1fr 1fr}
+  .sgrid{grid-template-columns:1fr}
+  .sf2{border-right:none!important}
+  .sf2:nth-child(odd){border-right:none!important}
+  .ass-body{grid-template-columns:1fr}
+
+  /* Drag items stacked */
+  .drag-item{flex-wrap:wrap;gap:8px}
+  .drag-handle{display:none}
+  .drag-actions{flex:0 0 100%;justify-content:flex-end}
+
+  /* Assegnazioni */
+  .ass-foot{gap:6px}
+
+  /* Toolbar */
+  .toolbar{gap:6px}
+  .toolbar .fi,.toolbar .fs{min-width:0;flex:1}
+  .tb-sp{display:none}
+  .vt{width:100%;order:10}
+  .vtb{flex:1;justify-content:center}
+
+  /* Mappa */
+  #s-mappa{height:calc(100vh - var(--top-h) - var(--nav-h) - var(--safe-b))}
+
+  /* Input sizes */
+  .fi,.fs{font-size:16px} /* prevent zoom on iOS */
+
+  /* KPI */
+  .kv{font-size:22px}
+}
+
+@media(min-width:769px){
+  .mob-list{display:none!important}
+  .bottom-nav{display:none!important}
+  .fab{display:none!important}
+}
+
+/* ── PIPELINE KANBAN ── */
+.kanban-board{display:flex;gap:14px;align-items:flex-start;min-width:900px;padding-bottom:4px}
+.kanban-col{flex:0 0 200px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden}
+.kanban-head{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.kanban-label{font-size:11px;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px}
+.kanban-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.kanban-count{background:var(--bd2);color:var(--tx3);font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.kanban-body{padding:8px;min-height:80px;display:flex;flex-direction:column;gap:6px}
+.kanban-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:all .15s}
+.kanban-card:hover{border-color:var(--wc);box-shadow:0 2px 8px rgba(38,173,228,.1)}
+.kanban-card:active{transform:scale(.98)}
+.kc-comune{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px}
+.kc-prov{font-size:10px;color:var(--tx3)}
+.kc-date{font-size:10px;color:var(--tx3);margin-top:5px}
+.kc-note{font-size:10px;color:var(--tx2);margin-top:4px;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kc-multi{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
+.kc-fase-chip{font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px}
+
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 
-<!-- APP -->
-<div class="app" id="appWrap">
-  <!-- TOPNAV -->
-  <div class="tn">
-    <div style="flex-shrink:0;width:170px">
-      <svg style="width:170px;height:25px;display:block" id="Livello_1" data-name="Livello 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 452.53 66.14"><defs><style>.cls-1{fill:#27ace3;}</style></defs><title>Logo web</title><polygon class="cls-1" points="49.07 63.99 39.46 23.7 29.67 63.99 17.54 63.99 0 2.05 13.81 2.05 23.98 42.17 32.56 2.05 46.18 2.05 55.6 42.17 65.67 2.05 78.92 2.05 61.57 63.99 49.07 63.99"/><path class="cls-1" d="M85.54,44.22a13.09,13.09,0,0,0,3,8.3,9.23,9.23,0,0,0,7.23,3.08,10.18,10.18,0,0,0,5.27-1.35A6.15,6.15,0,0,0,104,50.47h12.5a20.09,20.09,0,0,1-7.47,10.91,21.12,21.12,0,0,1-12.68,3.83q-23,0-23-25a29,29,0,0,1,1.49-9.61,20.62,20.62,0,0,1,4.34-7.37,18.71,18.71,0,0,1,7-4.71,25.26,25.26,0,0,1,9.42-1.64q10.63,0,16.09,6.82t5.46,20.52Zm19.13-7.65a12.64,12.64,0,0,0-.89-4.43,9.24,9.24,0,0,0-2.1-3.17,8.39,8.39,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61A8.61,8.61,0,0,0,89,29.15a11.4,11.4,0,0,0-3,7.42Z"/><rect class="cls-1" x="120.9" y="1.31" width="12.13" height="62.69"/><path class="cls-1" d="M142.54,64V26.68h-6.81V18.1h6.81q0-16.8,19.5-16.79V11.1a17.57,17.57,0,0,0-3.78.33A4.58,4.58,0,0,0,156,12.59a4.58,4.58,0,0,0-1.17,2.2,14.15,14.15,0,0,0-.33,3.31h7.84v8.58h-7.84V64Z"/><path class="cls-1" d="M191.7,64a18.65,18.65,0,0,1-.74-4.11,14.94,14.94,0,0,1-5.69,3.87,21.53,21.53,0,0,1-8.21,1.45q-7.94,0-11.62-3.5a12,12,0,0,1-3.68-9.1,16.62,16.62,0,0,1,1.59-7.88,11.74,11.74,0,0,1,4.38-4.62,21.18,21.18,0,0,1,6.67-2.47q3.87-.8,8.44-1.44c3-.44,5.1-1,6.16-1.73a3.91,3.91,0,0,0,1.59-3.5,3.9,3.9,0,0,0-2.1-3.5,10.93,10.93,0,0,0-5.65-1.26c-2.8,0-4.8.63-6,1.87A8.73,8.73,0,0,0,174.54,33H163.25a20.69,20.69,0,0,1,1.17-6.53,12.41,12.41,0,0,1,3.45-5.13,16.2,16.2,0,0,1,6.2-3.31,32.26,32.26,0,0,1,9.33-1.16,30.29,30.29,0,0,1,9.19,1.21,14.7,14.7,0,0,1,6.06,3.5A13.31,13.31,0,0,1,202,27.29,26.77,26.77,0,0,1,203,35V64Zm-.84-22.49a6.52,6.52,0,0,1-2.7,1.5A51.71,51.71,0,0,1,183,44.22c-3.48.68-5.88,1.55-7.18,2.61a5.53,5.53,0,0,0-2,4.57q0,5.13,5.87,5.13a11.67,11.67,0,0,0,4.34-.79,10.62,10.62,0,0,0,3.45-2.15,10.83,10.83,0,0,0,2.34-3.17,8.71,8.71,0,0,0,.88-3.87Z"/><path class="cls-1" d="M207.84,64V18.1h11.38v5.5A15,15,0,0,1,222.35,20a13.37,13.37,0,0,1,3.36-2,12.87,12.87,0,0,1,3.5-.89,35.83,35.83,0,0,1,3.63-.19h1.59V29.29a21.16,21.16,0,0,0-3.36-.28Q220,29,220,40.11V64Z"/><path class="cls-1" d="M245.9,44.22a13.09,13.09,0,0,0,3,8.3,9.23,9.23,0,0,0,7.23,3.08,10.18,10.18,0,0,0,5.27-1.35,6.15,6.15,0,0,0,2.94-3.78h12.5a20.14,20.14,0,0,1-7.47,10.91,21.12,21.12,0,0,1-12.68,3.83q-23,0-23-25a29,29,0,0,1,1.49-9.61,20.62,20.62,0,0,1,4.34-7.37,18.71,18.71,0,0,1,6.95-4.71A25.26,25.26,0,0,1,256,16.88q10.64,0,16.09,6.82t5.46,20.52ZM265,36.57a12.64,12.64,0,0,0-.89-4.43A9.24,9.24,0,0,0,262,29a8.39,8.39,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61,8.61,8.61,0,0,0-6.3,2.66,11.35,11.35,0,0,0-3,7.42Z"/><path class="cls-1" d="M335.55,42.73a34.92,34.92,0,0,1-3.26,9.6,25.92,25.92,0,0,1-5.65,7.37,24.22,24.22,0,0,1-7.88,4.76,27.93,27.93,0,0,1-9.89,1.68,30.9,30.9,0,0,1-11.33-2,24.3,24.3,0,0,1-9.1-6.16,29.29,29.29,0,0,1-6-10.12,40.74,40.74,0,0,1-2.2-14,46.37,46.37,0,0,1,2-14.13A30.08,30.08,0,0,1,288,9a24.91,24.91,0,0,1,9.09-6.67,29.85,29.85,0,0,1,12-2.33,30.33,30.33,0,0,1,10.49,1.73,25,25,0,0,1,8.12,4.75,23.08,23.08,0,0,1,5.41,7.14,25.55,25.55,0,0,1,2.47,8.77h-13a14.56,14.56,0,0,0-5-8.26,13.23,13.23,0,0,0-8.4-2.94q-8.11,0-11.94,5.83t-3.82,16q0,10.36,3.78,16.1t11.33,5.73a13.43,13.43,0,0,0,9.28-3.12,16.54,16.54,0,0,0,4.81-9Z"/><path class="cls-1" d="M366.71,64a19.23,19.23,0,0,1-.75-4.11,14.86,14.86,0,0,1-5.69,3.87,21.49,21.49,0,0,1-8.21,1.45q-7.92,0-11.61-3.5a12,12,0,0,1-3.69-9.1,16.62,16.62,0,0,1,1.59-7.88,11.83,11.83,0,0,1,4.39-4.62,21,21,0,0,1,6.66-2.47c2.59-.53,5.4-1,8.45-1.44s5.1-1,6.15-1.73a3.91,3.91,0,0,0,1.59-3.5,3.9,3.9,0,0,0-2.1-3.5,10.91,10.91,0,0,0-5.64-1.26c-2.8,0-4.81.63-6,1.87A8.73,8.73,0,0,0,349.55,33H338.26a21,21,0,0,1,1.16-6.53,12.53,12.53,0,0,1,3.46-5.13,16.12,16.12,0,0,1,6.2-3.31,32.26,32.26,0,0,1,9.33-1.16,30.33,30.33,0,0,1,9.19,1.21,14.76,14.76,0,0,1,6.06,3.5A13.29,13.29,0,0,1,377,27.29,26.41,26.41,0,0,1,378,35V64Zm-.84-22.49a6.52,6.52,0,0,1-2.7,1.5A52.75,52.75,0,0,1,358,44.22q-5.22,1-7.18,2.61a5.56,5.56,0,0,0-2,4.57q0,5.13,5.88,5.13a11.7,11.7,0,0,0,4.34-.79,10.6,10.6,0,0,0,5.78-5.32,8.72,8.72,0,0,0,.89-3.87Z"/><path class="cls-1" d="M382.85,64V18.1h11.38v5.5A15,15,0,0,1,397.35,20a13.37,13.37,0,0,1,3.36-2,13,13,0,0,1,3.5-.89,35.88,35.88,0,0,1,3.64-.19h1.59V29.29a21.16,21.16,0,0,0-3.36-.28Q395,29,395,40.11V64Z"/><path class="cls-1" d="M420.91,44.22a13.14,13.14,0,0,0,3,8.3,9.26,9.26,0,0,0,7.23,3.08,10.16,10.16,0,0,0,5.27-1.35,6.11,6.11,0,0,0,2.94-3.78h12.5a20.13,20.13,0,0,1-7.46,10.91,21.18,21.18,0,0,1-12.69,3.83q-23,0-23-25a29.24,29.24,0,0,1,1.49-9.61,20.76,20.76,0,0,1,4.34-7.37,18.79,18.79,0,0,1,6.95-4.71A25.34,25.34,0,0,1,431,16.88q10.63,0,16.1,6.82t5.45,20.52ZM440,36.57a12.87,12.87,0,0,0-.88-4.43,9.24,9.24,0,0,0-2.1-3.17,8.43,8.43,0,0,0-3-1.87,10.19,10.19,0,0,0-3.45-.61,8.65,8.65,0,0,0-6.3,2.66,11.4,11.4,0,0,0-3,7.42Z"/></svg>
-    </div>
-    <div class="tn-div"></div>
-    <a href="/" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx3);text-decoration:none;padding:5px 9px;border-radius:var(--r);transition:background .15s" onmouseover="this.style.background='var(--sur2)'" onmouseout="this.style.background='transparent'">
-      <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M10 12L6 8l4-4"/></svg>
-      Portale
-    </a>
-    <div class="tn-div"></div>
-    <div class="tn-dept">Reparto Patrocini</div>
-    <div class="tn-sp"></div>
-    <div class="tn-srch">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10.5 10.5l3 3"/></svg>
-      <input placeholder="Cerca comune, provincia..." id="srchInput" oninput="handleSearch(this.value)"/>
-    </div>
-    <div class="tn-u" onclick="toggleMenu()">
-      <div class="av" id="topAv">??</div>
-      <div>
-        <div style="font-size:12px;font-weight:500;white-space:nowrap" id="topName">Utente</div>
-        <div style="font-size:10px;color:var(--tx3)" id="topRole">—</div>
-      </div>
-      <div class="umenu" id="uMenu">
-        <div class="umi red" onclick="logout()">Esci</div>
-      </div>
-    </div>
+<!-- TOPBAR -->
+<div class="tn">
+  <a href="/" class="tn-back">
+    <svg viewBox="0 0 16 16"><path d="M10 12L6 8l4-4"/></svg>
+    <span>Portale</span>
+  </a>
+  <div class="tn-div"></div>
+  <div class="tn-logo">
+    <svg viewBox="0 0 453 67" xmlns="http://www.w3.org/2000/svg">
+      <polygon fill="#26ADE4" points="49,64 39.5,23.7 29.7,64 17.5,64 0,2 13.8,2 24,42.2 32.6,2 46.2,2 55.6,42.2 65.7,2 78.9,2 61.6,64"/>
+      <path fill="#26ADE4" d="M85.5,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H85.5z"/>
+      <rect fill="#26ADE4" x="120.9" y="1.3" width="12.1" height="62.7"/>
+      <path fill="#26ADE4" d="M142.5,64V26.7h-6.8V18.1h6.8C142.5,6.9,149,1.3,162,1.3v9.8c-1.6,0-2.8.1-3.8.3s-1.7.6-2.3,1.2-.9,1.3-1.2,2.2-.3,2-.3,3.3h7.8v8.6h-7.8V64H142.5z"/>
+      <path fill="#26ADE4" d="M335.5,42.7c-.7,3.5-1.8,6.8-3.3,9.6s-3.4,5.3-5.6,7.4-4.9,3.6-7.9,4.8-6.3,1.7-9.9,1.7c-4,0-7.8-.7-11.3-2.1s-6.6-3.4-9.1-6.2-4.6-6.1-6-10.1-2.2-8.7-2.2-14c0-5.2.7-9.9,2-14.1s3.2-7.7,5.7-10.6,5.5-5.1,9.1-6.7S304.6,0,309.1,0c3.9,0,7.4.6,10.5,1.7s5.9,2.7,8.1,4.8,4.1,4.4,5.4,7.1,2.2,5.7,2.5,8.8h-13c-.9-3.6-2.6-6.3-5-8.3s-5.3-2.9-8.4-2.9c-5.4,0-9.4,1.9-11.9,5.8s-3.8,9.2-3.8,16c0,6.9,1.3,12.3,3.8,16.1s6.3,5.7,11.3,5.7c3.9,0,7-1,9.3-3.1s3.9-5.1,4.8-9H335.5z"/>
+      <path fill="#26ADE4" d="M382.8,64V18.1h11.4v5.5c1-1.6,2-2.8,3.1-3.6s2.2-1.5,3.4-2,2.3-.8,3.5-.9,2.4-.2,3.6-.2h1.6v12.4c-1.1-.2-2.2-.3-3.4-.3-7.4,0-11.1,3.7-11.1,11.1V64H382.8z"/>
+      <path fill="#26ADE4" d="M420.9,44.2c.2,3.5,1.2,6.3,3,8.3s4.2,3.1,7.2,3.1c2,0,3.8-.5,5.3-1.4s2.5-2.2,2.9-3.8h12.5c-1.4,4.7-3.9,8.4-7.5,10.9s-7.8,3.8-12.7,3.8c-15.3,0-23-8.3-23-25,0-3.6.5-6.8,1.5-9.6s2.4-5.3,4.3-7.4,4.2-3.6,7-4.7,5.9-1.6,9.4-1.6c7.1,0,12.5,2.3,16.1,6.8s5.5,11.4,5.5,20.5H420.9z"/>
+    </svg>
   </div>
-
-  <div class="bd">
-    <!-- SIDEBAR -->
-    <nav class="side">
-      <div class="snl">Principale</div>
-      <div class="ni on" data-s="dash" onclick="navTo('dash')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-        Dashboard
-      </div>
-      <div class="ni" data-s="terr" onclick="navTo('terr')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5z"/></svg>
-        Territori
-        <span class="nib" id="terrBadge">0</span>
-      </div>
-
-      <div class="ni" data-s="mappa" onclick="navTo('mappa')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="2.5"/><path d="M8 1C5.2 1 3 3.2 3 6c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z"/></svg>
-        Mappa
-      </div>
-      <div class="ni" data-s="assegnazioni" onclick="navTo('assegnazioni')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v2H2zM2 7h8M2 11h10"/><circle cx="13" cy="11" r="2.5"/><path d="M13 9.5v1.5l1 1"/></svg>
-        Assegnazioni
-        <span class="nib" id="assBadge">0</span>
-      </div>
-      <div class="ni" data-s="programma" onclick="navTo('programma')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h12v2H2zM2 7h8v2H2zM2 12h10v2H2z"/><path d="M12 9l2 2-2 2"/></svg>
-        Programma
-        <span class="nib" id="prBadge">0</span>
-      </div>
-
-
-      <div class="sf">
-        <div class="av" id="sideAv">??</div>
-        <div>
-          <div style="font-size:12px;font-weight:500" id="sideName">Utente</div>
-          <div style="font-size:10px;color:var(--tx3)" id="sideRole">—</div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- MAIN -->
-    <div class="mn">
-      <div class="sb">
-        <div class="sb-l">
-          <div class="sb-cr"><span>WelfareCare</span> › <span id="crumb">Dashboard</span></div>
-          <div class="sb-tt" id="ttl">Dashboard</div>
-        </div>
-        <div class="sb-a">
-          <button class="btn btnp" onclick="openModalTerr()">+ Nuovo territorio</button>
-        </div>
-      </div>
-
-      <div class="ct">
-
-        <!-- DASHBOARD -->
-        <div class="sec on" id="s-dash">
-          <div class="kpis">
-            <div class="kpi"><div class="kl">Territori totali</div><div class="kv" id="kTot">—</div><div class="ks"><span class="kdot"></span>comuni</div></div>
-            <div class="kpi"><div class="kl">Regioni coperte</div><div class="kv" id="kReg" style="color:var(--wc)">—</div><div class="ks">regioni</div></div>
-          </div>
-          <div class="card">
-            <div class="ch"><span class="ct2">Ultimi territori aggiunti</span><button class="btn btns" onclick="navTo('terr')">Vedi tutti →</button></div>
-            <div class="ts">
-              <table class="tbl">
-                <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Incaricato</th></tr></thead>
-                <tbody id="dashTb"><tr><td colspan="5" class="loading">Caricamento...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- TERRITORI -->
-        <div class="sec" id="s-terr">
-          <div class="toolbar">
-            <input class="fi" style="width:200px;margin:0;font-size:12px" placeholder="Cerca comune..." id="tSearch" oninput="renderView()"/>
-            <select class="fs" style="width:150px" id="fReg" onchange="updateProv();renderView()">
-              <option value="">Tutte le regioni</option>
-            </select>
-            <select class="fs" style="width:150px" id="fProv" onchange="renderView()">
-              <option value="">Tutte le province</option>
-            </select>
-            <div class="tb-sp"></div>
-            <div class="vt">
-              <button class="vtb on" id="vLista" onclick="setView('lista')">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>Lista
-              </button>
-              <button class="vtb" id="vGruppo" onclick="setView('gruppo')">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Raggruppati
-              </button>
-            </div>
-          </div>
-          <div id="vListaWrap">
-            <div class="card">
-              <div class="ch"><span class="ct2" id="terrTitle">Territori</span></div>
-              <div class="ts">
-                <table class="tbl">
-                  <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Popolazione</th><th>N° P.IVA</th><th>Incaricato</th><th>Stato</th></tr></thead>
-                  <tbody id="terrTb"><tr><td colspan="8" class="loading">Caricamento...</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div id="vGruppoWrap" style="display:none"><div id="gruppoBody"><div class="loading">Caricamento...</div></div></div>
-        </div>
-
-        <!-- UTENTI -->
-        <div class="sec" id="s-utenti">
-          <div class="g2">
-            <div class="card">
-              <div class="ch"><span class="ct2">Account</span><button class="btn btnp" style="font-size:11px" onclick="openModalUtente()">+ Nuovo</button></div>
-              <table class="tbl"><thead><tr><th>Nome</th><th>Ruolo</th><th>Stato</th><th></th></tr></thead><tbody id="utTb"><tr><td colspan="4" class="loading">Caricamento...</td></tr></tbody></table>
-            </div>
-            <div class="card">
-              <div class="ch"><span class="ct2">Invita utente</span></div>
-              <div style="padding:14px 16px">
-                <div class="fg"><div class="fl">Email</div><input class="fi" id="iEmail" type="email" placeholder="utente@welfarecare.it"/></div>
-                <div class="fg"><div class="fl">Password temp.</div><input class="fi" id="iPwd" type="password" placeholder="Min. 8 caratteri"/></div>
-                <div class="fg"><div class="fl">Nome</div><input class="fi" id="iNome" placeholder="Mario"/></div>
-                <div class="fg"><div class="fl">Cognome</div><input class="fi" id="iCognome" placeholder="Rossi"/></div>
-                <div class="fg"><div class="fl">Ruolo</div><select class="fs" id="iRuolo"><option value="operatore">Operatore</option><option value="supervisore">Supervisore</option><option value="visualizzatore">Visualizzatore</option></select></div>
-                <button class="btn btnp" style="width:100%;margin-top:4px" onclick="creaUtente()">Crea account</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- PROGRAMMA -->
-        <div class="sec" id="s-programma">
-          <!-- TOOLBAR -->
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-            <select class="fs" id="prAnno" onchange="loadProgramma()" style="width:110px"></select>
-            <select class="fs" id="prIncaricato" onchange="loadProgramma()" style="width:180px">
-              <option value="">Tutti gli incaricati</option>
-            </select>
-            <div style="flex:1"></div>
-            <button class="btn btns" onclick="exportProgrammaPDF()" style="font-size:11px">
-              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 11h4"/></svg>
-              Esporta PDF
-            </button>
-            <button class="btn btns" onclick="apriModalAggiuntaProgramma()" style="font-size:11px">
-              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M8 2v12M2 8h12"/></svg>
-              Aggiungi comune
-            </button>
-            <button class="btn btnp" onclick="generaProgramma()" id="btnGeneraProgramma">
-              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:1.8"><path d="M2 8h2l2-5 3 10 2-5h3"/></svg>
-              Genera programma
-            </button>
-          </div>
-          <!-- BODY -->
-          <div id="programmaBody"><div class="loading">Caricamento...</div></div>
-        </div>
-
-        <!-- MAPPA -->
-        <div class="sec" id="s-mappa" style="height:calc(100vh - 120px);flex-direction:column">
-          <!-- Toolbar mappa -->
-          <div style="display:flex;gap:10px;align-items:center;padding:12px 0;flex-shrink:0;flex-wrap:wrap">
-            <select class="fs" id="mapFilterStato" onchange="filterMappaMarkers()" style="width:160px">
-              <option value="">Tutti gli stati</option>
-              <option value="attivo">● Attivi</option>
-              <option value="NO">● NO</option>
-              <option value="MAIL">● Mail</option>
-              <option value="ASSEGNATO">● Assegnati</option>
-              <option value="SOSPESO">● Sospesi</option>
-              <option value="PATROCINIO">● Patrocinio</option>
-              <option value="AGENTE">● Agente</option>
-              <option value="NO P.I.">● No P.I.</option>
-            </select>
-            <select class="fs" id="mapFilterReg" onchange="filterMappaMarkers()" style="width:160px">
-              <option value="">Tutte le regioni</option>
-            </select>
-            <select class="fs" id="mapFilterInc" onchange="filterMappaMarkers()" style="width:160px">
-              <option value="">Tutti gli incaricati</option>
-            </select>
-            <div style="flex:1"></div>
-            <!-- Legenda -->
-            <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;align-items:center">
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#26ADE4;display:inline-block"></span>Attivo</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span>NO</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mail</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span>Assegnato</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Patrocinio</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#94a3b8;display:inline-block"></span>Sospeso/Altro</span>
-            </div>
-            <div style="font-size:11px;color:var(--tx3)" id="mapCount">— comuni</div>
-          </div>
-          <div id="mapContainer" style="flex:1;border-radius:var(--rl);overflow:hidden;border:1px solid var(--bd)"></div>
-        </div>
-
-        <!-- ASSEGNAZIONI -->
-        <div class="sec" id="s-assegnazioni">
-          <!-- Toolbar -->
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-            <select class="fs" id="assFilterAnno" onchange="loadAssegnazioni()" style="width:110px"></select>
-            <select class="fs" id="assFilterInc" onchange="loadAssegnazioni()" style="width:170px">
-              <option value="">Tutti gli incaricati</option>
-            </select>
-            <select class="fs" id="assFilterStato" onchange="loadAssegnazioni()" style="width:150px">
-              <option value="">Tutti gli stati</option>
-              <option value="bozza">Bozza</option>
-              <option value="confermata">Confermata</option>
-              <option value="in_lavorazione">In lavorazione</option>
-              <option value="completata">Completata</option>
-            </select>
-            <input class="fi" id="assSearch" placeholder="Cerca comune..." oninput="loadAssegnazioni()" style="width:180px;margin:0;font-size:12px"/>
-            <div style="flex:1"></div>
-            <button class="btn btnp" onclick="apriModalAssegnazione()">
-              <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:1.8"><path d="M8 2v12M2 8h12"/></svg>
-              Nuova assegnazione
-            </button>
-          </div>
-          <div id="assBody"><div class="loading">Caricamento...</div></div>
-        </div>
-
-        <!-- ARCHIVIO -->
-        <div class="sec" id="s-archivio">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-            <select class="fs" style="width:130px" id="archAnno" onchange="loadArchivio()">
-              <option value="">Tutti gli anni</option>
-            </select>
-            <select class="fs" style="width:180px" id="archIncaricato" onchange="loadArchivio()">
-              <option value="">Tutti gli incaricati</option>
-            </select>
-            <input class="fi" style="width:200px;margin:0;font-size:12px" placeholder="Cerca comune..." id="archSearch" oninput="loadArchivio()"/>
-          </div>
-          <div id="archivioBody"><div class="loading">Caricamento...</div></div>
-        </div>
-
-        <!-- IMPOSTAZIONI -->
-        <div class="sec" id="s-impost">
-          <div class="card" style="max-width:460px">
-            <div class="ch"><span class="ct2">Il tuo profilo</span></div>
-            <div style="padding:14px 16px">
-              <div class="fg"><div class="fl">Nome</div><input class="fi" id="pNome"/></div>
-              <div class="fg"><div class="fl">Cognome</div><input class="fi" id="pCognome"/></div>
-              <div class="fg"><div class="fl">Email</div><input class="fi" id="pEmail" disabled/></div>
-              <div class="fg"><div class="fl">Nuova password</div><input class="fi" id="pPwd" type="password" placeholder="Lascia vuoto per non cambiare"/></div>
-              <button class="btn btnp" onclick="salvaProfilo()">Salva modifiche</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
+  <div class="tn-dept">Reparto Patrocini</div>
+  <div class="tn-sp"></div>
+  <div class="tn-srch">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10.5 10.5l3 3"/></svg>
+    <input placeholder="Cerca comune..." id="srchInput" oninput="handleSearch(this.value)"/>
+  </div>
+  <div class="tn-u" onclick="toggleMenu()">
+    <div class="av" id="topAv">??</div>
+    <div class="tn-uname" id="topName">Utente</div>
+    <div class="umenu" id="uMenu">
+      <div class="umi red" onclick="logout()">Esci</div>
     </div>
   </div>
 </div>
 
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bn-wrap">
+    <button class="bn-btn on" data-s="dash" onclick="navTo('dash')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Home
+    </button>
+    <button class="bn-btn" data-s="terr" onclick="navTo('terr')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+      Territori
+      <span class="bn-dot" id="terrDot" style="display:none"></span>
+    </button>
+    <button class="bn-btn" data-s="assegnazioni" onclick="navTo('assegnazioni')">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+      Assegna
+      <span class="bn-dot" id="assDot" style="display:none"></span>
+    </button>
+    <button class="bn-btn" data-s="programma" onclick="navTo('programma')">
+      <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      Programma
+      <span class="bn-dot" id="prDot" style="display:none"></span>
+    </button>
+    <button class="bn-btn" data-s="pipeline" onclick="navTo('pipeline')">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="18" rx="1"/><rect x="18" y="3" width="4" height="18" rx="1"/></svg>
+      Pipeline
+    </button>
+    <button class="bn-btn" data-s="mappa" onclick="navTo('mappa')">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      Mappa
+    </button>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" onclick="fabAction()" style="display:none">+</button>
+
+<!-- APP BODY -->
+<div class="app-body">
+  <!-- SIDEBAR (desktop) -->
+  <nav class="side">
+    <div class="snl">Principale</div>
+    <button class="ni on" data-s="dash" onclick="navTo('dash')">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Dashboard
+    </button>
+    <button class="ni" data-s="terr" onclick="navTo('terr')">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="2.5"/><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5z"/></svg>Territori
+      <span class="nib" id="terrBadge">0</span>
+    </button>
+    <button class="ni" data-s="pipeline" onclick="navTo('pipeline')">
+      <svg viewBox="0 0 16 16"><path d="M1 3h3v10H1zM7 3h2v10H7zM13 3h2v10h-2z"/><path d="M4 6h3M9 6h4M4 10h3M9 10h4"/></svg>Pipeline
+    </button>
+    <button class="ni" data-s="mappa" onclick="navTo('mappa')">
+      <svg viewBox="0 0 16 16"><polygon points="1 4 1 14 6 11 11 14 15 11 15 2 11 5 6 2 1 4"/><line x1="6" y1="2" x2="6" y2="11"/><line x1="11" y1="5" x2="11" y2="14"/></svg>Mappa
+    </button>
+    <button class="ni" data-s="assegnazioni" onclick="navTo('assegnazioni')">
+      <svg viewBox="0 0 16 16"><path d="M2 3h12v2H2zM2 7h8M2 11h10"/><circle cx="13" cy="11" r="2.5"/></svg>Assegnazioni
+      <span class="nib" id="assBadge">0</span>
+    </button>
+    <button class="ni" data-s="programma" onclick="navTo('programma')">
+      <svg viewBox="0 0 16 16"><path d="M2 2h12v2H2zM2 7h8v2H2zM2 12h10v2H2z"/><path d="M12 9l2 2-2 2"/></svg>Programma
+      <span class="nib" id="prBadge">0</span>
+    </button>
+    <div class="side-foot">
+      <div class="av" id="sideAv">??</div>
+      <div>
+        <div style="font-size:12px;font-weight:500" id="sideName">Utente</div>
+        <div style="font-size:10px;color:var(--tx3)" id="sideRole">—</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="subbar">
+      <div class="subbar-title" id="ttl">Dashboard</div>
+      <div style="display:flex;gap:8px" id="subbarActions"></div>
+    </div>
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="sec on" id="s-dash">
+        <div class="kpis">
+          <div class="kpi"><div class="kl">Territori</div><div class="kv" id="kTot">—</div><div class="ks"><span class="kdot"></span>comuni totali</div></div>
+          <div class="kpi"><div class="kl">Regioni</div><div class="kv" id="kReg" style="color:var(--wc)">—</div><div class="ks">coperte</div></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <span class="ct2">Ultimi territori</span>
+            <button class="btn btns" onclick="navTo('terr')">Vedi tutti →</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>Incaricato</th></tr></thead>
+              <tbody id="dashTb"><tr><td colspan="5" class="loading">Caricamento...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="mob-list" id="dashMobList"></div>
+        </div>
+      </div>
+
+      <!-- ── TERRITORI ── -->
+      <div class="sec" id="s-terr">
+        <div class="toolbar">
+          <input class="fi" style="flex:1;min-width:140px;margin:0;font-size:14px" placeholder="Cerca comune..." id="tSearch" oninput="renderView()"/>
+          <select class="fs" style="flex:1;min-width:120px" id="fReg" onchange="updateProv();renderView()">
+            <option value="">Tutte le regioni</option>
+          </select>
+          <select class="fs" style="flex:1;min-width:120px" id="fProv" onchange="renderView()">
+            <option value="">Tutte le province</option>
+          </select>
+          <div class="vt">
+            <button class="vtb on" id="vLista" onclick="setView('lista')">
+              <svg viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12"/></svg>Lista
+            </button>
+            <button class="vtb" id="vGruppo" onclick="setView('gruppo')">
+              <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Gruppi
+            </button>
+          </div>
+        </div>
+        <div class="card" id="vListaWrap">
+          <div class="ch"><span class="ct2" id="terrTitle">Territori</span></div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Comune</th><th>Provincia</th><th>Regione</th><th>CAP</th><th>P.IVA</th><th>Pipeline</th></tr></thead>
+              <tbody id="terrTb"><tr><td colspan="7" class="loading">Caricamento...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="mob-list" id="terrMobList"></div>
+        </div>
+        <div id="vGruppoWrap" style="display:none"><div id="gruppoBody"><div class="loading">Caricamento...</div></div></div>
+      </div>
+
+      <!-- ── PIPELINE ── -->
+      <div class="sec" id="s-pipeline">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+          <select class="fs" id="plFilterReg" onchange="loadPipeline()" style="flex:1;min-width:120px">
+            <option value="">Tutte le regioni</option>
+          </select>
+          <select class="fs" id="plFilterAnno" onchange="loadPipeline()" style="flex:1;min-width:90px">
+            <option value="">Tutti gli anni</option>
+          </select>
+          <input class="fi" id="plSearch" placeholder="Cerca comune..." oninput="loadPipeline()" style="flex:1;min-width:130px;margin:0"/>
+        </div>
+        <div id="pipelineKanban" style="overflow-x:auto;padding-bottom:8px">
+          <div class="loading">Caricamento...</div>
+        </div>
+      </div>
+
+      <!-- ── MAPPA ── -->
+      <div class="sec" id="s-mappa">
+        <div style="display:flex;gap:8px;align-items:center;padding-bottom:10px;flex-shrink:0;flex-wrap:wrap">
+          <select class="fs" id="mapFilterStato" onchange="filterMappaMarkers()" style="flex:1;min-width:130px">
+            <option value="">Tutti gli stati</option>
+            <option value="attivo">Attivi</option>
+            <option value="NO">NO</option>
+            <option value="MAIL">Mail</option>
+            <option value="ASSEGNATO">Assegnati</option>
+            <option value="SOSPESO">Sospesi</option>
+            <option value="PATROCINIO">Patrocinio</option>
+          </select>
+          <select class="fs" id="mapFilterReg" onchange="filterMappaMarkers()" style="flex:1;min-width:130px">
+            <option value="">Tutte le regioni</option>
+          </select>
+          <select class="fs" id="mapFilterInc" onchange="filterMappaMarkers()" style="flex:1;min-width:130px">
+            <option value="">Tutti gli incaricati</option>
+          </select>
+          <div style="font-size:11px;color:var(--tx3);flex-shrink:0" id="mapCount">— comuni</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;align-items:center;padding-bottom:10px;flex-shrink:0">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#26ADE4;display:inline-block"></span>Attivo</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span>NO</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mail</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span>Assegnato</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Patrocinio</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#94a3b8;display:inline-block"></span>Altro</span>
+        </div>
+        <div id="mapContainer" style="flex:1;border-radius:var(--rl);overflow:hidden;border:1px solid var(--bd);min-height:300px"></div>
+      </div>
+
+      <!-- ── ASSEGNAZIONI ── -->
+      <div class="sec" id="s-assegnazioni">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+          <select class="fs" id="assFilterAnno" onchange="loadAssegnazioni()" style="flex:1;min-width:90px"></select>
+          <select class="fs" id="assFilterInc" onchange="loadAssegnazioni()" style="flex:1;min-width:130px">
+            <option value="">Tutti gli incaricati</option>
+          </select>
+          <select class="fs" id="assFilterStato" onchange="loadAssegnazioni()" style="flex:1;min-width:120px">
+            <option value="">Tutti gli stati</option>
+            <option value="bozza">Bozza</option>
+            <option value="confermata">Confermata</option>
+            <option value="in_lavorazione">In lavorazione</option>
+            <option value="completata">Completata</option>
+          </select>
+          <input class="fi" id="assSearch" placeholder="Cerca..." oninput="loadAssegnazioni()" style="flex:1;min-width:120px;margin:0"/>
+        </div>
+        <div id="assBody"><div class="loading">Caricamento...</div></div>
+      </div>
+
+      <!-- ── PROGRAMMA ── -->
+      <div class="sec" id="s-programma">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+          <select class="fs" id="prAnno" onchange="loadProgramma()" style="flex:1;min-width:90px"></select>
+          <select class="fs" id="prIncaricato" onchange="loadProgramma()" style="flex:1;min-width:150px">
+            <option value="">Tutti gli incaricati</option>
+          </select>
+          <button class="btn btnp" onclick="generaProgramma()" id="btnGeneraProgramma" style="white-space:nowrap">
+            <svg viewBox="0 0 16 16" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:1.8"><path d="M2 8h2l2-5 3 10 2-5h3"/></svg>
+            Genera
+          </button>
+        </div>
+        <div id="programmaBody"><div class="loading">Caricamento...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
 <!-- MODAL TERRITORIO -->
 <div class="mbg" id="mTerr">
   <div class="modal">
@@ -565,6 +655,17 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
           <div style="font-size:10px;color:var(--tx3);margin-top:4px" id="uploadLabel">Caricamento...</div>
         </div>
       </div>
+      <!-- PIPELINE -->
+      <div style="padding:14px 16px;border-top:1px solid var(--bd)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Pipeline contatto</div>
+          <button onclick="apriModalFase(schedaTerritoryId)" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:4px 9px;border:1px solid var(--bd2);border-radius:6px;cursor:pointer;background:var(--sur);font-family:var(--f)">
+            + Aggiungi fase
+          </button>
+        </div>
+        <div id="schedaPipeline"><div style="font-size:11px;color:var(--tx3);padding:6px 0">Nessuna fase registrata</div></div>
+      </div>
+
       <!-- REFERENTI -->
       <div style="padding:14px 16px;border-top:1px solid var(--bd)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -581,6 +682,42 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
         <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Storico edizioni</div>
         <div id="schedaStorico"><div class="empty" style="padding:12px;font-size:11px">Nessuna edizione registrata</div></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PIPELINE -->
+<div class="mbg" id="mPipeline">
+  <div class="modal" style="width:480px">
+    <div class="mh">
+      <div class="mt" id="mPipelineTitle">Aggiungi fase pipeline</div>
+      <button class="mc" onclick="closeM('mPipeline')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fl">Comune *</div>
+        <select class="fs" id="plComuneSel"><option value="">Seleziona...</option></select>
+      </div>
+      <div class="fg">
+        <div class="fl">Fase *</div>
+        <select class="fs" id="plFaseSel"></select>
+      </div>
+      <div class="fg">
+        <div class="fl">Data</div>
+        <input class="fi" id="plData" type="date"/>
+      </div>
+      <div class="fg">
+        <div class="fl">Note</div>
+        <textarea class="fi" id="plNote" rows="3" placeholder="Dettagli, contatti, accordi presi..."></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="plAttivo" checked style="width:15px;height:15px;accent-color:var(--wc)"/>
+        Fase attiva
+      </label>
+    </div>
+    <div class="mf">
+      <button class="btn btns" onclick="closeM('mPipeline')">Annulla</button>
+      <button class="btn btnp" onclick="salvaFase()">Salva</button>
     </div>
   </div>
 </div>
@@ -745,6 +882,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);height:100vh;over
 </div>
 
 <script>
+
 // ── MAPPA ────────────────────────────────────────────
 let mappaInstance = null;
 let mappaAllData = [];
@@ -911,6 +1049,7 @@ async function init(u){
   const ruolo=pr?.ruolo||'operatore';
   const ini=nome.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2)||'??';
   ['topAv','sideAv'].forEach(id=>document.getElementById(id).textContent=ini);
+  const mobAv=document.getElementById('mobAv');if(mobAv)mobAv.textContent=ini;
   document.getElementById('topName').textContent=nome;
   document.getElementById('topRole').textContent=rlbl(ruolo);
   document.getElementById('sideName').textContent=nome;
@@ -946,8 +1085,20 @@ async function loadDash(){
   document.getElementById('kTot').textContent=data.length;
   document.getElementById('kReg').textContent=regs.length;
   document.getElementById('terrBadge').textContent=data.length;
+  const td=document.getElementById('terrDot');if(td){td.style.display=data.length>0?'block':'none';td.textContent=data.length;}
   const tb=document.getElementById('dashTb');
   tb.innerHTML=data.slice(0,8).map(t=>`<tr onclick="apriScheda('${t.id}')"><td><strong>${t.comune}</strong></td><td>${t.provincia}</td><td>${t.regione}</td><td>${t.cap||'—'}</td><td>${t.profili?`${t.profili.nome||''} ${t.profili.cognome||''}`.trim():'—'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nessun territorio</td></tr>';
+  const dashMob=document.getElementById('dashMobList');
+  if(dashMob){
+    dashMob.innerHTML=data.slice(0,8).map(t=>{
+      const inc=t.profili?`${t.profili.nome||''} ${t.profili.cognome||''}`.trim():'';
+      return`<div class="mob-card" onclick="apriScheda('${t.id}')">
+        <div class="mc-title">${t.comune}</div>
+        <div class="mc-sub">${t.provincia} · ${t.regione}</div>
+        ${inc?`<div class="mc-tags"><span style="font-size:11px;color:var(--tx3)">👤 ${inc}</span></div>`:''}
+      </div>`;
+    }).join('');
+  }
 }
 
 async function loadTerritori(){
@@ -996,12 +1147,42 @@ function setView(v){
 
 function renderView(){curView==='lista'?renderLista():renderGruppo();}
 
-function renderLista(){
+async async function renderLista(){
   const data=getFiltered();
   document.getElementById('terrTitle').textContent=`Territori (${data.length})`;
   const tb=document.getElementById('terrTb');
-  if(!data.length){tb.innerHTML='<tr><td colspan="8" class="empty">Nessun risultato</td></tr>';return;}
-  tb.innerHTML=data.map(t=>`<tr onclick="apriScheda('${t.id}')"><td><strong>${t.comune}</strong></td><td>${t.provincia}</td><td>${t.regione}</td><td>${t.cap||'—'}</td><td>${t.popolazione?t.popolazione.toLocaleString('it-IT'):'—'}</td><td>${t.numero_piva||'—'}</td><td>${t.profili?`${t.profili.nome||''} ${t.profili.cognome||''}`.trim():'—'}</td><td><span class="bx ${t.attivo?'bg':'ba'}">${t.attivo?'Attivo':'Inattivo'}</span></td></tr>`).join('');
+  const mob=document.getElementById('terrMobList');
+  if(!data.length){
+    tb.innerHTML='<tr><td colspan="6" class="empty">Nessun risultato</td></tr>';
+    if(mob)mob.innerHTML='<div class="empty">Nessun risultato</div>';
+    return;
+  }
+  // Carica pipeline per questi territori
+  const ids=data.map(t=>t.id);
+  const {data:plRaw}=await sb.from('pipeline_territorio').select('territorio_id,fase').eq('attivo',true).in('territorio_id',ids);
+  const plMap={};
+  (plRaw||[]).forEach(p=>{if(!plMap[p.territorio_id])plMap[p.territorio_id]=[];plMap[p.territorio_id].push(p.fase);});
+  const FL={'da_contattare':'Da contattare','contattato':'Contattato','patrocinio_concesso':'Patrocinio ✓','patrocinio_negato':'Patrocinio ✗','suolo_pubblico_richiesto':'Suolo pubblico','location_selezionata':'Location'};
+  const FC={'da_contattare':'bk','contattato':'ba','patrocinio_concesso':'bg','patrocinio_negato':'br','suolo_pubblico_richiesto':'bb','location_selezionata':'bwc'};
+  // Desktop table
+  tb.innerHTML=data.map(t=>{
+    const fasi=plMap[t.id]||[];
+    const fasiHtml=fasi.length?fasi.map(f=>`<span class="bx ${FC[f]||'bk'}" style="font-size:9px;margin-right:2px">${FL[f]||f}</span>`).join(''):'<span style="color:var(--tx3);font-size:11px">—</span>';
+    return`<tr onclick="apriScheda('${t.id}')"><td><strong>${t.comune}</strong></td><td>${t.provincia}</td><td>${t.regione}</td><td>${t.cap||'—'}</td><td>${t.numero_piva||'—'}</td><td>${fasiHtml}</td></tr>`;
+  }).join('');
+  // Mobile cards
+  if(mob){
+    mob.innerHTML=data.map(t=>{
+      const fasi=plMap[t.id]||[];
+      return`<div class="mob-card" onclick="apriScheda('${t.id}')">
+        <div class="mc-title">${t.comune}</div>
+        <div class="mc-sub">${t.provincia} · ${t.regione}${t.cap?' · '+t.cap:''}</div>
+        <div class="mc-tags" style="margin-top:6px">
+          ${fasi.length?fasi.map(f=>`<span class="bx ${FC[f]||'bk'}" style="font-size:9px">${FL[f]||f}</span>`).join(''):'<span style="font-size:11px;color:var(--tx3)">Nessuna fase</span>'}
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 function renderGruppo(){
@@ -1071,6 +1252,8 @@ async function apriScheda(id){
     const mx=Math.max(...budget.map(b=>b.importo||0));
     bd.innerHTML=budget.map(b=>`<div class="brow"><span class="banno">${b.anno}</span><div class="bbar"><div class="bfill" style="width:${mx>0?Math.round((b.importo/mx)*100):0}%"></div></div><span class="bimp">€ ${Number(b.importo).toLocaleString('it-IT')}</span></div>`).join('');
   }
+  // Carica pipeline
+  await loadPipelineTerritorio(id);
   // Carica referenti
   await loadReferenti(id);
   // Carica documenti
@@ -1282,6 +1465,41 @@ async function loadStoricoEdizioni(territorioId) {
       </div>
     </div>`;
   }).join('') + '<div style="height:4px"></div>';
+}
+
+// ── PIPELINE IN SCHEDA ───────────────────────────────
+async function loadPipelineTerritorio(territorioId) {
+  const div = document.getElementById('schedaPipeline');
+  if (!div) return;
+  div.innerHTML = '<div style="font-size:11px;color:var(--tx3)">Caricamento...</div>';
+
+  const { data } = await sb.from('pipeline_territorio')
+    .select('*')
+    .eq('territorio_id', territorioId)
+    .order('created_at', { ascending: false });
+
+  if (!data?.length) {
+    div.innerHTML = '<div style="font-size:11px;color:var(--tx3);padding:4px 0">Nessuna fase registrata</div>';
+    return;
+  }
+
+  const FL = {'da_contattare':'Da contattare','contattato':'Contattato','patrocinio_concesso':'Patrocinio concesso','patrocinio_negato':'Patrocinio negato','suolo_pubblico_richiesto':'Suolo pubblico richiesto','location_selezionata':'Location selezionata'};
+  const FC = {'da_contattare':'#94a3b8','contattato':'#f59e0b','patrocinio_concesso':'#10b981','patrocinio_negato':'#ef4444','suolo_pubblico_richiesto':'#8b5cf6','location_selezionata':'#26ADE4'};
+  const FB = {'da_contattare':'#f1f5f9','contattato':'#fef3c7','patrocinio_concesso':'#d1fae5','patrocinio_negato':'#fee2e2','suolo_pubblico_richiesto':'#ede9fe','location_selezionata':'#e8f6fc'};
+
+  div.innerHTML = data.map(p => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)">
+      <span style="display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;flex-shrink:0;background:${FB[p.fase]||'#f1f5f9'};color:${FC[p.fase]||'#94a3b8'}">${FL[p.fase]||p.fase}</span>
+      <div style="flex:1;min-width:0">
+        ${p.data_fase ? `<div style="font-size:10px;color:var(--tx3)">📅 ${new Date(p.data_fase).toLocaleDateString('it-IT')}</div>` : ''}
+        ${p.note ? `<div style="font-size:11px;color:var(--tx2);margin-top:2px">${p.note}</div>` : ''}
+        ${!p.attivo ? `<div style="font-size:10px;color:var(--tx3);margin-top:2px;font-style:italic">Archiviata</div>` : ''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="apriModalFase('${territorioId}',null,'${p.id}')" style="background:none;border:1px solid var(--bd2);color:var(--tx3);cursor:pointer;font-size:11px;padding:3px 7px;border-radius:6px;font-family:var(--f)">✏️</button>
+        <button onclick="eliminaFase('${p.id}')" style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px">✕</button>
+      </div>
+    </div>`).join('') + '<div style="height:4px"></div>';
 }
 
 // ── REFERENTI TERRITORIO ─────────────────────────────
@@ -1583,6 +1801,7 @@ function navTo(id){
   if(id==='terr')renderView();
   if(id==='programma')loadProgramma();
   if(id==='mappa')initMappa();
+  if(id==='pipeline')loadPipeline();
   if(id==='assegnazioni')loadAssegnazioni();
 }
 
@@ -1701,6 +1920,7 @@ async function loadProgramma() {
   const { data } = await q;
 
   document.getElementById('prBadge').textContent = data?.length || 0;
+  const pbm=document.getElementById('prBadgeMob');if(pbm)pbm.textContent=data?.length>0?data.length:'';
   const body = document.getElementById('programmaBody');
   if (!data?.length) {
     body.innerHTML = '<div class="empty">Nessun comune nel programma per questo anno.<br><br><button class="btn btnp" onclick="apriModalAggiuntaProgramma()">+ Aggiungi il primo comune</button></div>';
@@ -2030,6 +2250,256 @@ async function ripristina(archId) {
     await init(session.user);
   } else {
     window.location.href='/';
+  }
+})();
+
+// ── MOBILE FAB ────────────────────────────────────────
+const FAB_ACTIONS = {
+  pipeline: ()=>apriModalFase(),
+  terr: ()=>openModalTerr(),
+  assegnazioni: ()=>apriModalAssegnazione(),
+  programma: ()=>apriModalAggiuntaProgramma(),
+};
+let currentSection = 'dash';
+
+function fabAction() {
+  const fn = FAB_ACTIONS[currentSection];
+  if (fn) fn();
+}
+
+// ── NAV ───────────────────────────────────────────────
+const NAV = {
+  dash:'Dashboard', terr:'Territori', pipeline:'Pipeline contatti', mappa:'Mappa',
+  assegnazioni:'Assegnazioni', programma:'Programma'
+};
+
+function navTo(id) {
+  currentSection = id;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on', n.dataset.s===id));
+  document.querySelectorAll('.bn-btn').forEach(n=>n.classList.toggle('on', n.dataset.s===id));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on', s.id==='s-'+id));
+  const title = NAV[id]||id;
+  document.getElementById('ttl').textContent = title;
+  
+  // Subbar actions
+  const actions = document.getElementById('subbarActions');
+  if (id==='terr') actions.innerHTML = '<button class="btn btnp" onclick="openModalTerr()" style="font-size:12px">+ Nuovo territorio</button>';
+  if (id==='pipeline') actions.innerHTML = '<button class="btn btnp" onclick="apriModalFase()" style="font-size:12px">+ Aggiungi fase</button>';
+  else if (id==='assegnazioni') actions.innerHTML = '<button class="btn btnp" onclick="apriModalAssegnazione()" style="font-size:12px">+ Nuova assegnazione</button>';
+  else if (id==='programma') actions.innerHTML = '<button class="btn btns" onclick="apriModalAggiuntaProgramma()" style="font-size:11px">+ Aggiungi comune</button>';
+  else actions.innerHTML = '';
+  
+  // FAB
+  const fab = document.getElementById('fabBtn');
+  if (fab) fab.style.display = FAB_ACTIONS[id] ? 'flex' : 'none';
+  
+  document.getElementById('uMenu').classList.remove('on');
+  if (id==='terr') renderView();
+  if (id==='programma') loadProgramma();
+  if (id==='assegnazioni') loadAssegnazioni();
+  if (id==='mappa') initMappa();
+}
+
+function toggleMenu() { document.getElementById('uMenu').classList.toggle('on'); }
+function handleSearch(q) {
+  if (document.getElementById('s-terr').classList.contains('on')) {
+    document.getElementById('tSearch').value = q;
+    renderView();
+  }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.tn-u')) document.getElementById('uMenu').classList.remove('on');
+});
+
+// ── LOGOUT ────────────────────────────────────────────
+async function logout() { await sb.auth.signOut(); window.location.href = '/'; }
+
+// ── SESSION ───────────────────────────────────────────
+// ─── PIPELINE ────────────────────────────────────────
+const FASI = [
+  { id:'da_contattare',    label:'Da contattare',       color:'#94a3b8', bg:'#f1f5f9' },
+  { id:'contattato',       label:'Contattato',          color:'#f59e0b', bg:'#fef3c7' },
+  { id:'patrocinio_concesso',   label:'Patrocinio concesso',  color:'#10b981', bg:'#d1fae5' },
+  { id:'patrocinio_negato',     label:'Patrocinio negato',    color:'#ef4444', bg:'#fee2e2' },
+  { id:'suolo_pubblico_richiesto', label:'Suolo pubblico',    color:'#8b5cf6', bg:'#ede9fe' },
+  { id:'location_selezionata',  label:'Location selezionata', color:'#26ADE4', bg:'#e8f6fc' },
+];
+
+let pipelineData = []; // tutti i record pipeline
+let pipelineEditId = null; // ID record pipeline in modifica
+
+async function loadPipeline() {
+  // Popola filtro regioni
+  const regSel = document.getElementById('plFilterReg');
+  if (regSel.options.length < 2) {
+    [...new Set(allT.map(t=>t.regione).filter(Boolean))].sort()
+      .forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; regSel.appendChild(o); });
+  }
+  // Popola anni
+  const annoSel = document.getElementById('plFilterAnno');
+  if (annoSel.options.length < 2) {
+    const curr = new Date().getFullYear();
+    [curr-1,curr,curr+1].forEach(y => { const o=document.createElement('option'); o.value=y; o.textContent=y; annoSel.appendChild(o); });
+  }
+
+  const regFilt = regSel.value;
+  const annoFilt = parseInt(annoSel.value) || null;
+  const q = document.getElementById('plSearch').value.toLowerCase();
+
+  // Carica tutti i record pipeline attivi
+  let query = sb.from('pipeline_territorio')
+    .select('*, territori(id,comune,provincia,regione)')
+    .eq('attivo', true)
+    .order('created_at', { ascending: false });
+  if (annoFilt) query = query.gte('data_fase', `${annoFilt}-01-01`).lte('data_fase', `${annoFilt}-12-31`);
+
+  const { data } = await query;
+  pipelineData = data || [];
+
+  // Filtra
+  let filtered = pipelineData;
+  if (regFilt) filtered = filtered.filter(p => p.territori?.regione === regFilt);
+  if (q) filtered = filtered.filter(p => (p.territori?.comune||'').toLowerCase().includes(q) || (p.territori?.provincia||'').toLowerCase().includes(q));
+
+  // Raggruppa per territorio — un comune può avere più fasi attive
+  const byTerr = {};
+  filtered.forEach(p => {
+    const tid = p.territorio_id;
+    if (!byTerr[tid]) byTerr[tid] = { territorio: p.territori, fasi: [] };
+    byTerr[tid].fasi.push(p);
+  });
+
+  // Raggruppa per fase (usa la fase più recente di ogni territorio per il Kanban)
+  const byFase = {};
+  FASI.forEach(f => { byFase[f.id] = []; });
+
+  Object.values(byTerr).forEach(item => {
+    // Se ha più fasi attive, mostralo in tutte
+    item.fasi.forEach(p => {
+      if (byFase[p.fase]) byFase[p.fase].push({ ...item, currentFase: p });
+    });
+  });
+
+  renderKanban(byFase);
+}
+
+function renderKanban(byFase) {
+  const board = document.getElementById('pipelineKanban');
+  board.innerHTML = `<div class="kanban-board">${
+    FASI.map(f => {
+      const items = byFase[f.id] || [];
+      return `<div class="kanban-col">
+        <div class="kanban-head">
+          <div class="kanban-label">
+            <div class="kanban-dot" style="background:${f.color}"></div>
+            ${f.label}
+          </div>
+          <span class="kanban-count">${items.length}</span>
+        </div>
+        <div class="kanban-body">
+          <button onclick="apriModalFase(null,'${f.id}')" style="width:100%;padding:7px;border:1px dashed var(--bd2);border-radius:var(--r);background:none;color:var(--tx3);font-family:var(--f);font-size:11px;cursor:pointer">+ Aggiungi</button>
+          ${items.map(item => {
+            const p = item.currentFase;
+            const t = item.territorio;
+            const altreF = item.fasi.filter(x => x.id !== p.id);
+            return `<div class="kanban-card" onclick="apriSchedaPipeline('${t?.id}','${p.id}')">
+              <div class="kc-comune">${t?.comune||'—'}</div>
+              <div class="kc-prov">${t?.provincia||''} · ${t?.regione||''}</div>
+              ${p.data_fase ? `<div class="kc-date">📅 ${new Date(p.data_fase).toLocaleDateString('it-IT')}</div>` : ''}
+              ${p.note ? `<div class="kc-note">${p.note}</div>` : ''}
+              ${altreF.length ? `<div class="kc-multi">${altreF.map(x => {
+                const ff = FASI.find(f=>f.id===x.fase);
+                return ff ? `<span class="kc-fase-chip" style="background:${ff.bg};color:${ff.color}">${ff.label}</span>` : '';
+              }).join('')}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')
+  }</div>`;
+}
+
+function apriSchedaPipeline(terrId, pipelineId) {
+  // Prima apri scheda territorio poi mostra modal modifica fase
+  if (terrId) apriScheda(terrId);
+}
+
+async function apriModalFase(terrId = null, fasePredefinita = null, editPipelineId = null) {
+  pipelineEditId = editPipelineId;
+  // Use current scheda territory if no terrId passed
+  if (!terrId && schedaTerritoryId) terrId = schedaTerritoryId;
+
+  // Popola select comuni
+  const sel = document.getElementById('plComuneSel');
+  sel.innerHTML = '<option value="">Seleziona comune...</option>';
+  [...allT].sort((a,b)=>a.comune.localeCompare(b.comune)).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = `${t.comune} (${t.provincia})`;
+    sel.appendChild(o);
+  });
+  if (terrId) sel.value = terrId;
+  sel.disabled = !!terrId;
+
+  // Popola fasi
+  const faseSel = document.getElementById('plFaseSel');
+  faseSel.innerHTML = FASI.map(f => `<option value="${f.id}">${f.label}</option>`).join('');
+  if (fasePredefinita) faseSel.value = fasePredefinita;
+
+  document.getElementById('plData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('plNote').value = '';
+  document.getElementById('plAttivo').checked = true;
+  document.getElementById('mPipelineTitle').textContent = editPipelineId ? 'Modifica fase' : 'Aggiungi fase pipeline';
+  document.getElementById('mPipeline').classList.add('on');
+}
+
+async function salvaFase() {
+  const terrId = document.getElementById('plComuneSel').value;
+  const fase = document.getElementById('plFaseSel').value;
+  if (!terrId || !fase) { toast('Seleziona comune e fase', 'error'); return; }
+
+  const payload = {
+    territorio_id: terrId,
+    fase,
+    data_fase: document.getElementById('plData').value || null,
+    note: document.getElementById('plNote').value.trim() || null,
+    attivo: document.getElementById('plAttivo').checked,
+    creato_da: user?.id,
+  };
+
+  if (pipelineEditId) {
+    await sb.from('pipeline_territorio').update(payload).eq('id', pipelineEditId);
+    toast('Fase aggiornata', 'success');
+  } else {
+    await sb.from('pipeline_territorio').insert(payload);
+    toast('Fase aggiunta alla pipeline', 'success');
+  }
+  closeM('mPipeline');
+  if (document.getElementById('mScheda').classList.contains('on') && schedaTerritoryId) {
+    await loadPipelineTerritorio(schedaTerritoryId);
+  }
+  if (document.getElementById('s-pipeline').classList.contains('on')) {
+    await loadPipeline();
+  }
+}
+
+async function eliminaFase(id) {
+  if (!confirm('Rimuovere questa fase dalla pipeline?')) return;
+  await sb.from('pipeline_territorio').delete().eq('id', id);
+  toast('Fase rimossa', 'success');
+  if (document.getElementById('mScheda').classList.contains('on') && schedaTerritoryId) {
+    await loadPipelineTerritorio(schedaTerritoryId);
+  }
+  if (document.getElementById('s-pipeline').classList.contains('on')) {
+    await loadPipeline();
+  }
+}
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await init(session.user);
+  } else {
+    window.location.href = '/';
   }
 })();
 </script>
