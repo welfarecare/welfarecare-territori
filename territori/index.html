@@ -1147,7 +1147,7 @@ function setView(v){
 
 function renderView(){curView==='lista'?renderLista():renderGruppo();}
 
-async async function renderLista(){
+async function renderLista(){
   const data=getFiltered();
   document.getElementById('terrTitle').textContent=`Territori (${data.length})`;
   const tb=document.getElementById('terrTb');
