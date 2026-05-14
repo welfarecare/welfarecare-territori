@@ -882,14 +882,10 @@ function loadDashboard() {
   // Last 8 territories
   const tbody = document.getElementById('dashTable');
   if (!allTerritori.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="table-empty">Nessun territorio ancora. <button class="btn btn-sm btn-primary" onclick="showView('territori')">Inizia ora →</button></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Nessun territorio ancora. <button class="btn btn-sm btn-primary" onclick="showView('territori')">Inizia ora →</button></td></tr>`;
     return;
   }
   tbody.innerHTML = [...allTerritori].slice(0,8).map(t => {
-    const fasi = fasiMap[t.id] || [];
-    const fasiHtml = fasi.length
-      ? fasi.slice(0,1).map(f => `<span class="badge ${FASI[f.fase]?.cls||'badge-gray'}" style="font-size:10px">${FASI[f.fase]?.label||f.fase}</span>`).join('')
-      : '<span style="font-size:11px;color:var(--tx4)">—</span>';
     return `<tr onclick="apriScheda('${t.id}')">
       <td><strong>${t.nome}</strong></td>
       <td>${t.regione||'—'}</td>
