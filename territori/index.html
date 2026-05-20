@@ -356,11 +356,14 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
       <!-- ── TERRITORI ── -->
       <div class="view" id="view-territori">
         <div class="toolbar">
-          <input class="fi" style="max-width:200px;margin:0;font-size:13px" placeholder="Cerca territorio..." id="terrSearch" oninput="filterTerritori()"/>
-          <select class="fs" style="max-width:140px" id="terrProvincia" onchange="filterTerritori()">
+          <input class="fi" style="max-width:180px;margin:0;font-size:13px" placeholder="Cerca territorio..." id="terrSearch" oninput="filterTerritori()"/>
+          <select class="fs" style="max-width:130px" id="terrRegione" onchange="onTerrRegioneChange()">
+            <option value="">Tutte le regioni</option>
+          </select>
+          <select class="fs" style="max-width:130px" id="terrProvincia" onchange="filterTerritori()">
             <option value="">Tutte le province</option>
           </select>
-          <select class="fs" style="max-width:160px" id="terrSort" onchange="filterTerritori()">
+          <select class="fs" style="max-width:150px" id="terrSort" onchange="filterTerritori()">
             <option value="nome_asc">Nome A→Z</option>
             <option value="nome_desc">Nome Z→A</option>
             <option value="piva_desc">P.IVA ↓</option>
@@ -714,6 +717,15 @@ function handleSearch(q) {
 async function loadTerritori() {
   const { data } = await sb.from('territori').select('*').order('nome');
   allTerritori = data || [];
+  // Populate regione filter
+  const regioni = [...new Set(allTerritori.map(t=>t.regione).filter(Boolean))].sort();
+  const regSel = document.getElementById('terrRegione');
+  if (regSel) {
+    const curr = regSel.value;
+    regSel.innerHTML = '<option value="">Tutte le regioni</option>';
+    regioni.forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; regSel.appendChild(o); });
+    regSel.value = curr;
+  }
   // Populate provincia filter
   const province = [...new Set(allTerritori.map(t=>t.provincia).filter(Boolean))].sort();
   const provSel = document.getElementById('terrProvincia');
@@ -745,6 +757,21 @@ function getFasiPerTerritorio() {
   return map;
 }
 
+function onTerrRegioneChange() {
+  const reg = document.getElementById('terrRegione').value;
+  const provSel = document.getElementById('terrProvincia');
+  provSel.innerHTML = '<option value="">Tutte le province</option>';
+  const province = [...new Set(
+    allTerritori.filter(t => !reg || t.regione === reg).map(t=>t.provincia).filter(Boolean)
+  )].sort();
+  province.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p.charAt(0)+p.slice(1).toLowerCase();
+    provSel.appendChild(o);
+  });
+  filterTerritori();
+}
+
 function setSort(field) {
   const sel = document.getElementById('terrSort');
   if (!sel) return;
@@ -768,9 +795,11 @@ function renderTerritori() {
   const prov = document.getElementById('terrProvincia')?.value || '';
   const sort = document.getElementById('terrSort')?.value || 'nome_asc';
   const fasiMap = getFasiPerTerritorio();
+  const reg = document.getElementById('terrRegione')?.value || '';
   let filtered = allTerritori.filter(t => {
+    if (reg && t.regione !== reg) return false;
     if (prov && t.provincia !== prov) return false;
-    if (q && !t.nome?.toLowerCase().includes(q) && !t.provincia?.toLowerCase().includes(q)) return false;
+    if (q && !t.nome?.toLowerCase().includes(q) && !t.provincia?.toLowerCase().includes(q) && !t.regione?.toLowerCase().includes(q)) return false;
     return true;
   });
   // Sort
