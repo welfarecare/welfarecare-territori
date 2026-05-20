@@ -379,7 +379,7 @@ html,body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:1
             <thead>
               <tr>
                 <th onclick="setSort('nome')" style="cursor:pointer;user-select:none">Territorio <span id="sortNome">↕</span></th>
-                <th>Provincia</th>
+                <th onclick="setSort('provincia')" style="cursor:pointer;user-select:none">Provincia <span id="sortProvincia">↕</span></th>
                 <th>Abitanti</th>
                 <th onclick="setSort('piva')" style="cursor:pointer;user-select:none">P.IVA <span id="sortPiva">↕</span></th>
                 <th onclick="setSort('budget')" style="cursor:pointer;user-select:none">Budget storico <span id="sortBudget">↕</span></th>
@@ -779,12 +779,13 @@ function setSort(field) {
   if (curr === field+'_asc') sel.value = field+'_desc';
   else sel.value = field+'_asc';
   // Update arrows
-  ['nome','piva','budget'].forEach(f => {
+  ['nome','piva','budget','provincia'].forEach(f => {
     const el = document.getElementById('sort'+f.charAt(0).toUpperCase()+f.slice(1));
     if (el) el.textContent = '↕';
   });
   const dir = sel.value.endsWith('_asc') ? '↑' : '↓';
-  const arrow = document.getElementById('sort'+field.charAt(0).toUpperCase()+field.slice(1));
+  const fieldMap = { nome:'Nome', piva:'Piva', budget:'Budget', provincia:'Provincia' };
+  const arrow = document.getElementById('sort'+(fieldMap[field]||field.charAt(0).toUpperCase()+field.slice(1)));
   if (arrow) arrow.textContent = dir;
   filterTerritori();
 }
@@ -810,6 +811,8 @@ function renderTerritori() {
       case 'piva_asc': return (a.partite_iva||0) - (b.partite_iva||0);
       case 'budget_desc': return (budgetSummary[b.id]?.tot||0) - (budgetSummary[a.id]?.tot||0);
       case 'budget_asc': return (budgetSummary[a.id]?.tot||0) - (budgetSummary[b.id]?.tot||0);
+      case 'provincia_asc': return (a.provincia||'').localeCompare(b.provincia||'');
+      case 'provincia_desc': return (b.provincia||'').localeCompare(a.provincia||'');
       default: return (a.nome||'').localeCompare(b.nome||'');
     }
   });
